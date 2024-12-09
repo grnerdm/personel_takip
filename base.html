@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <!-- base.html dosyasına eklenecek CSS -->
+    <style>
+      .form-control[disabled], 
+      .form-select[disabled] {
+          background-color: #e9ecef;
+          cursor: not-allowed;
+      }
+      
+      .edit-buttons-container {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 20px;
+          position: relative;
+          z-index: 20; /* Butonların overlay'in üzerinde görünmesi için */
+      }
+      
+      .edit-form-container {
+          position: relative;
+      }
+      
+      .form-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.05);
+          z-index: 10;
+          pointer-events: none; /* Overlay altındaki elementlere tıklamaya izin ver */
+          display: none;
+      }
+      
+      .form-overlay.active {
+          display: block;
+      }
+      
+      #editButton {
+          position: relative;
+          z-index: 30;
+          cursor: pointer !important;
+      }
+      </style>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Personel Takip Programı{% endblock %}</title>
+
+    <link href="{{ config.FLAGS_JS }}" rel="stylesheet" />
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <!-- Flag Icons CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.11.0/css/flag-icons.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Stil for tarih ve saat göstergesi */
+      #datetime-container {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigasyon Barı -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+          <i class="fas fa-user-friends"></i> Personel Takip Programı
+        </a>
+        {% if current_user.is_authenticated %}
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        {% endif %}
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+              <a href="{{ url_for('index') }}" class="nav-link">
+                <i class="fa fa-home"></i> Anasayfa
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('yonetici_ayarlari') }}" class="nav-link">
+                <i class="fas fa-cogs"></i> Yönetici Ayarları
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('yonetici_paneli') }}" class="nav-link">
+                <i class="fas fa-tools"></i> Yönetici Paneli
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('gonder') }}" class="nav-link">
+                <i class="fas fa-paper-plane"></i> Personel Gönder
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('muhasebe') }}" class="nav-link">
+                <i class="fas fa-chart-line"></i> Muhasebe
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('logout') }}" class="nav-link text-danger">
+                <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+              </a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a href="{{ url_for('login') }}" class="nav-link">
+                <i class="fas fa-sign-in-alt"></i> Giriş Yap
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Flash Mesajları -->
+    {% with messages = get_flashed_messages() %} {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Kapat"
+        ></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
+    <!-- Ana İçerik -->
+    {% block content %} {% endblock %}
+
+    <!-- Tarih, Saat, Kullanıcı Adı ve Hafta Numarası Göstergesi -->
+    {% if current_user.is_authenticated %}
+    <div id="datetime-container">
+      <span><i class="fas fa-user"></i> {{ current_user.username }}</span>
+      <span id="weekNumber"></span>
+      <span id="datetime"></span>
+    </div>
+    {% endif %}
+
+    <!-- JS Scripts -->
+    <!-- Bootstrap JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+    <script>
+      // ISO 8601 hafta numarası hesaplama fonksiyonu
+      function getWeekNumber(date) {
+        const d = new Date(
+          Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+        );
+        // Perşembeye ayarla: (Perşembe ISO haftanın ilk günüdür)
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+        return weekNo;
+      }
+
+      function updateDateTime() {
+        const now = new Date();
+        // Tarih ve saat formatlama
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+          timeZone: "Europe/Amsterdam",
+        };
+        const formatter = new Intl.DateTimeFormat("tr-TR", options);
+        document.getElementById("datetime").textContent = formatter.format(now);
+
+        // Hafta numarasını hesapla
+        const weekNo = getWeekNumber(now);
+        document.getElementById("weekNumber").textContent = "Hafta: " + weekNo;
+      }
+
+      // Sayfa yüklendiğinde ve her saniye güncelle
+      document.addEventListener("DOMContentLoaded", () => {
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+      });
+    </script>
+  </body>
+</html>

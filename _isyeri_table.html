@@ -1,0 +1,57 @@
+<!-- templates/partials/_isyeri_table.html -->
+<table class="table table-bordered table-striped table-hover fixed-table table-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>İş Yeri Adı</th>
+            <th>KVK Numarası</th>
+            <th>Şirket Sahibi</th>
+            <th>İletişim Telefonu</th>
+            <th>Faaliyet Sektörü</th>
+            <th>Banka Hesabı</th>
+            <th>Adres</th>
+            {% if isyeri_form %}
+            <th>Çalışan Sayısı</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for isyeri in isyeri_listesi %}
+        <tr>
+            <td>
+                <a href="{{ url_for('edit_isyeri', isyeri_id=isyeri.id) }}">{{ isyeri.ad }}</a>
+            </td>
+            <td>{{ isyeri.kvk_nummer }}</td>
+            <td>{{ isyeri.sahib }}</td>
+            <td>{{ isyeri.iletisim_telefon }}</td>
+            <td>{{ isyeri.faaliyet_sektoru }}</td>
+            <td>{{ isyeri.banka_hesabi }}</td>
+            <td>{{ isyeri.adres }}</td>
+            {% if isyeri_form %}
+            <td>
+            <td>
+            {% if isyeri_dict[isyeri.id].calisan_sayisi > 0 %}
+            <span class="badge bg-primary">{{ isyeri_dict[isyeri.id].calisan_sayisi }} Personel</span>
+                    {% else %}
+          <span class="badge bg-secondary">Personel Yok</span>
+                    {% endif %}
+             </td>
+                <!-- Silme Formu -->
+                <form method="post" action="{{ url_for('yonetici_paneli') }}">
+                    {{ isyeri_form.hidden_tag() }}
+                    <input type="hidden" name="action" value="remove_isyeri">
+                    <input type="hidden" name="isyeri_id" value="{{ isyeri.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('İş yeri silinsin mi?');">
+                        <i class="fas fa-trash-alt"></i> Sil
+                    </button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        {% if isyeri_listesi|length == 0 %}
+        <tr>
+            <td colspan="{% if isyeri_form %}8{% else %}7{% endif %}" class="text-center">Mevcut iş yeri bulunmamaktadır.</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>

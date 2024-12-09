@@ -1,0 +1,835 @@
+<!-- templates/yonetici_paneli.html -->
+<!-- templates/yonetici_paneli.html -->
+{% extends "base.html" %}
+
+{% block title %}Yönetici Paneli - Personel Takip Programı{% endblock %}
+
+{% block extra_head %}
+<style>
+    .fixed-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .fixed-table th, .fixed-table td {
+        font-size: 0.85rem;
+        word-wrap: break-word;
+        white-space: normal;
+        padding: 0.5rem;
+    }
+
+    /* Responsive Tasarım */
+    @media (max-width: 768px) {
+        .form-row > .form-group {
+            margin-bottom: 1rem;
+        }
+
+        /* Tablolarda gereksiz sütunları gizleme */
+        .fixed-table th:nth-child(5),
+        .fixed-table td:nth-child(5),
+        .fixed-table th:nth-child(6),
+        .fixed-table td:nth-child(6),
+        .fixed-table th:nth-child(7),
+        .fixed-table td:nth-child(7),
+        .fixed-table th:nth-child(8),
+        .fixed-table td:nth-child(8),
+        .fixed-table th:nth-child(9),
+        .fixed-table td:nth-child(9) {
+            display: none;
+        }
+    }
+
+    /* Buton ikonları için küçük boyut */
+    .btn i {
+        margin-right: 5px;
+    }
+
+    /* İletişim Personeli Bölümü */
+    .iletisim_personeli {
+        border: 1px solid #ced4da;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+    .remove-personel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Yönetici Paneli</h1>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs flex-wrap mt-4" id="adminTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'isyeri' %}active{% endif %}" id="isyeri-tab" data-bs-toggle="tab" data-bs-target="#isyeri" type="button" role="tab" aria-controls="isyeri" aria-selected="{% if active_tab == 'isyeri' %}true{% else %}false{% endif %}">
+                İş Yeri Ekle/Sil
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'personel' %}active{% endif %}" id="personel-tab" data-bs-toggle="tab" data-bs-target="#personel" type="button" role="tab" aria-controls="personel" aria-selected="{% if active_tab == 'personel' %}true{% else %}false{% endif %}">
+                Personel Ekle/Sil
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'arac-ekle' %}active{% endif %}" id="arac-ekle-tab" data-bs-toggle="tab" data-bs-target="#arac-ekle" type="button" role="tab" aria-controls="arac-ekle" aria-selected="{% if active_tab == 'arac-ekle' %}true{% else %}false{% endif %}">
+                Araç Ekle/Sil
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'ev' %}active{% endif %}" id="ev-tab" data-bs-toggle="tab" data-bs-target="#ev" type="button" role="tab" aria-controls="ev" aria-selected="{% if active_tab == 'ev' %}true{% else %}false{% endif %}">
+                Ev Ekle/Sil
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabContent">
+        <!-- İş Yeri Ekle/Sil Tab -->
+        <div class="tab-pane fade {% if active_tab == 'isyeri' %}show active{% endif %}" id="isyeri" role="tabpanel" aria-labelledby="isyeri-tab">
+            <!-- İş Yeri Ekleme Formu -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-building"></i> İş Yeri Ekle
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('yonetici_paneli') }}">
+                        {{ isyeri_form.hidden_tag() }}
+                        <input type="hidden" name="action" value="add_isyeri">
+
+                        <div class="mb-3">
+                            {{ isyeri_form.ad.label(class="form-label") }}
+                            {{ isyeri_form.ad(class="form-control") }}
+                            {% for error in isyeri_form.ad.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ isyeri_form.kvk_nummer.label(class="form-label") }}
+                            {{ isyeri_form.kvk_nummer(class="form-control") }}
+                            {% for error in isyeri_form.kvk_nummer.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ isyeri_form.sahib.label(class="form-label") }}
+                            {{ isyeri_form.sahib(class="form-control") }}
+                            {% for error in isyeri_form.sahib.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ isyeri_form.iletisim_telefon.label(class="form-label") }}
+                            {{ isyeri_form.iletisim_telefon(class="form-control") }}
+                            {% for error in isyeri_form.iletisim_telefon.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div> <!-- Eksik kapanış etiketi eklendi -->
+                        <div class="mb-3">
+                            {{ isyeri_form.faaliyet_sektoru.label(class="form-label") }}
+                            {{ isyeri_form.faaliyet_sektoru(class="form-control") }}
+                            {% for error in isyeri_form.faaliyet_sektoru.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ isyeri_form.banka_hesabi.label(class="form-label") }}
+                            {{ isyeri_form.banka_hesabi(class="form-control") }}
+                            {% for error in isyeri_form.banka_hesabi.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ isyeri_form.adres.label(class="form-label") }}
+                            {{ isyeri_form.adres(class="form-control") }}
+                            {% for error in isyeri_form.adres.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- İletişim Personelleri Eklemek için -->
+                        <h4>İletişim Personelleri</h4>
+                        <div id="iletisim_personelleri">
+                            {% for subform in isyeri_form.iletisim_personelleri %}
+                            <div class="iletisim_personeli">
+                                <div class="mb-3">
+                                    {{ subform.isim.label(class="form-label") }}
+                                    {{ subform.isim(class="form-control") }}
+                                    {% for error in subform.isim.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mb-3">
+                                    {{ subform.telefon.label(class="form-label") }}
+                                    {{ subform.telefon(class="form-control") }}
+                                    {% for error in subform.telefon.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mb-3">
+                                    {{ subform.email.label(class="form-label") }}
+                                    {{ subform.email(class="form-control") }}
+                                    {% for error in subform.email.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-danger btn-sm remove-personel">Kaldır</button>
+                                <hr>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="add_personel">İletişim Personeli Ekle</button>
+                        <br><br>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Ekle
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mevcut İş Yerleri -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Mevcut İş Yerleri
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-striped fixed-table table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>İş Yeri Adı</th>
+                                <th>KVK Numarası</th>
+                                <th>Şirket Sahibi</th>
+                                <th>İletişim Telefonu</th>
+                                <th>İletişim E-maili</th>
+                                <th>Faaliyet Sektörü</th>
+                                <th>Banka Hesabı</th>
+                                <th>Adres</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for isyeri in isyeri_listesi %}
+                            <tr>
+                                <td>{{ isyeri.ad }}</td>
+                                <td>{{ isyeri.kvk_nummer }}</td>
+                                <td>{{ isyeri.sahib }}</td>
+                                <td>{{ isyeri.iletisim_telefon }}</td>
+                                <td>{{ isyeri.faaliyet_sektoru }}</td>
+                                <td>{{ isyeri.banka_hesabi }}</td>
+                                <td>{{ isyeri.adres }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_isyeri', isyeri_id=isyeri.id) }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i> Düzenle
+                                    </a>
+                                    <form method="post" action="{{ url_for('yonetici_paneli') }}" style="display:inline;" onsubmit="return confirm('Bu iş yerini silmek istediğinizden emin misiniz?');">
+                                        {{ isyeri_form.csrf_token }}
+                                        <input type="hidden" name="action" value="remove_isyeri">
+                                        <input type="hidden" name="isyeri_id" value="{{ isyeri.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash-alt"></i> Sil
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if isyeri_listesi|length == 0 %}
+                            <tr>
+                                <td colspan="9" class="text-center">Mevcut iş yeri bulunmamaktadır.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Personel Ekle/Sil Tab -->
+        <div class="tab-pane fade {% if active_tab == 'personel' %}show active{% endif %}" id="personel" role="tabpanel" aria-labelledby="personel-tab">
+            <!-- Personel Ekleme Formu -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Personel Ekle</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('yonetici_paneli') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="add_personel">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personel_ad" class="form-label">Personel Adı</label>
+                                <input type="text" class="form-control" id="personel_ad" name="personel_ad" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personel_soyad" class="form-label">Personel Soyadı</label>
+                                <input type="text" class="form-control" id="personel_soyad" name="personel_soyad" required>
+                            </div>
+                        </div>
+            
+                        <div class="mb-3">
+                            <label for="personel_uyruk" class="form-label">Uyruk</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                <select class="form-select" id="personel_uyruk" name="personel_uyruk" required>
+                                    {% for code, country in country_choices %}
+                                        <option value="{{ code }}">{{ country }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+            
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="calistigi_sirket" class="form-label">Çalıştığı İş Yeri</label>
+                                <select class="form-select" id="calistigi_sirket" name="calistigi_sirket">
+                                    <option value="">İş Yeri Yok</option>
+                                    {% for isyeri in isyeri_listesi %}
+                                        <option value="{{ isyeri.id }}">{{ isyeri.ad }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personel_status" class="form-label">Çalışma Durumu</label>
+                                <select class="form-select" id="personel_status" name="personel_status" disabled>
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Pasif" selected>Pasif</option>
+                                </select>
+                            </div>
+                        </div>
+            
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personel_email" class="form-label">E-Mail</label>
+                                <input type="email" class="form-control" id="personel_email" name="personel_email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personel_telefon" class="form-label">Telefon No</label>
+                                <input type="tel" class="form-control" id="personel_telefon" name="personel_telefon">
+                            </div>
+                        </div>
+            
+                        <div class="mb-3">
+                            <label for="personel_adres" class="form-label">Adres</label>
+                            <input type="text" class="form-control" id="personel_adres" name="personel_adres">
+                        </div>
+            
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personel_banka_hesabi" class="form-label">Banka Hesabı</label>
+                                <input type="text" class="form-control" id="personel_banka_hesabi" name="personel_banka_hesabi">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personel_bsn_numarasi" class="form-label">BSN Numarası</label>
+                                <input type="text" class="form-control" id="personel_bsn_numarasi" name="personel_bsn_numarasi" 
+                                       pattern="\d{9}" title="BSN numarası 9 haneli olmalıdır">
+                            </div>
+                        </div>
+            
+                        <div class="mb-3">
+                            <label for="personel_bilgi" class="form-label">Kısa Bilgi</label>
+                            <textarea class="form-control" id="personel_bilgi" name="personel_bilgi" rows="3"></textarea>
+                        </div>
+            
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personel_foto" class="form-label">Fotoğraf Yükle (Max 5 MB)</label>
+                                <input type="file" class="form-control" id="personel_foto" name="personel_foto" 
+                                       accept=".png,.jpg,.jpeg,.gif">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personel_kimlik_foto" class="form-label">Kimlik Fotoğrafı Yükle (Max 5 MB)</label>
+                                <input type="file" class="form-control" id="personel_kimlik_foto" name="personel_kimlik_foto" 
+                                       accept=".png,.jpg,.jpeg,.gif">
+                            </div>
+                        </div>
+            
+                        <button type="submit" class="btn btn-primary">Personel Ekle</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mevcut Personeller -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-users"></i> Mevcut Personeller
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-striped fixed-table table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Ad</th>
+                                <th>Soyad</th>
+                                <th>E-mail</th>
+                                <th>Telefon</th>
+                                <th>Adres</th>
+                                <th>Banka Hesabı</th>
+                                <th>Çalıştığı Şirket</th>
+                                <th>Bilgi</th>
+                                <th>Fotoğraf</th>
+                                <th>Kimlik Fotoğrafı</th>
+                                <th>BSN Numarası</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for personel in personel_listesi %}
+                            <tr>
+                                <td><a href="{{ url_for('edit_personel', personel_id=personel.id) }}">{{ personel.ad }}</a></td>
+                                <td><a href="{{ url_for('edit_personel', personel_id=personel.id) }}">{{ personel.soyad }}</a></td>
+                                <td>{{ personel.email }}</td>
+                                <td>{{ personel.telefon }}</td>
+                                <td>{{ personel.adres }}</td>
+                                <td>{{ personel.banka_hesabi }}</td>
+                                <td>{{ personel.calistigi_sirket }}</td>
+                                <td>{{ personel.bilgi }}</td>
+                                <td>
+                                    {% if personel.foto_path %}
+                                        <img src="{{ url_for('static', filename=personel.foto_path.split('static/')[-1]) }}" alt="Personel Fotoğrafı" class="img-thumbnail clickable-image" data-bs-toggle="modal" data-bs-target="#imageModal" data-image="{{ url_for('static', filename=personel.foto_path.split('static/')[-1]) }}" loading="lazy">
+                                    {% else %}
+                                        Yok
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if personel.kimlik_foto_path %}
+                                        <img src="{{ url_for('static', filename=personel.kimlik_foto_path.split('static/')[-1]) }}" alt="Kimlik Fotoğrafı" class="img-thumbnail clickable-image" data-bs-toggle="modal" data-bs-target="#imageModal" data-image="{{ url_for('static', filename=personel.kimlik_foto_path.split('static/')[-1]) }}" loading="lazy">
+                                    {% else %}
+                                        Yok
+                                    {% endif %}
+                                </td>
+                                <td>{{ personel.bsn_numarasi if personel.bsn_numarasi else 'Yok' }}</td>
+                                <td>
+                                    <form method="post" action="{{ url_for('yonetici_paneli') }}" onsubmit="return confirm('Bu personeli silmek istediğinize emin misiniz?');">
+                                        <input type="hidden" name="action" value="remove_personel">
+                                        <input type="hidden" name="personel_id" value="{{ personel.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-user-minus"></i> Sil
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if personel_listesi|length == 0 %}
+                            <tr>
+                                <td colspan="12" class="text-center">Mevcut personel bulunmamaktadır.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Araç Ekle/Sil Tab -->
+        <div class="tab-pane fade {% if active_tab == 'arac-ekle' %}show active{% endif %}" id="arac-ekle" role="tabpanel" aria-labelledby="arac-ekle-tab">
+            <!-- Araç Ekleme Formu -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-car"></i> Araç Ekle
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('yonetici_paneli') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="add_vehicle">
+                        <div class="mb-3">
+                            <label for="arac_plaka" class="form-label">Araç Plakası</label>
+                            <input type="text" class="form-control" id="arac_plaka" name="arac_plaka" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="arac_marka_model" class="form-label">Araç Marka/Model</label>
+                            <input type="text" class="form-control" id="arac_marka_model" name="arac_marka_model" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sofor" class="form-label">Şoför</label>
+                            <select class="form-select" id="sofor" name="sofor" required>
+                                {% for personel in personel_listesi %}
+                                <option value="{{ personel.id }}">{{ personel.ad }} {{ personel.soyad }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="km" class="form-label">Araç Km</label>
+                            <input type="number" class="form-control" id="km" name="km" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="parking_zone" class="form-label">Park Bölgesi</label>
+                            <input type="text" class="form-control" id="parking_zone" name="parking_zone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="ruhsat_foto" class="form-label">Ruhsat Fotoğrafı</label>
+                            <input type="file" class="form-control" id="ruhsat_foto" name="ruhsat_foto" accept="image/*">
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="maintenance_status" name="maintenance_status" checked>
+                            <label class="form-check-label" for="maintenance_status">Bakım Yapıldı</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="penalty_status" name="penalty_status">
+                            <label class="form-check-label" for="penalty_status">Ceza Var</label>
+                        </div>
+                        <div class="mb-3" id="penalty_info_group" style="display: none;">
+                            <label for="penalty_info" class="form-label">Ceza Bilgisi</label>
+                            <textarea class="form-control" id="penalty_info" name="penalty_info"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Araç Ekle</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mevcut Araçlar -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Mevcut Araçlar
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-striped fixed-table table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Araç Plakası</th>
+                                <th>Araç Marka/Model</th>
+                                <th>Şoför</th>
+                                <th>Km</th>
+                                <th>Bakım Durumu</th>
+                                <th>Park Bölgesi</th>
+                                <th>Ceza Durumu</th>
+                                <th>Ruhsat Fotoğrafı</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for arac in vehicle_listesi %}
+                            <tr>
+                                <td><a href="{{ url_for('edit_vehicle', vehicle_id=arac.id) }}">{{ arac.arac_plaka }}</a></td>
+                                <td>{{ arac.arac_marka_model }}</td>
+                                <td>{{ arac.sofor.ad }} {{ arac.sofor.soyad }}</td>
+                                <td>{{ arac.km }}</td>
+                                <td>
+                                    {% if arac.maintenance_status %}
+                                        <span class="badge bg-success">Bakım Yapıldı</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Bakım Gerekli</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ arac.parking_zone }}</td>
+                                <td>
+                                    {% if arac.penalty_status %}
+                                        <span class="badge bg-danger">Ceza Var</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Ceza Yok</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if arac.ruhsat_photo_path %}
+                                        <img src="{{ url_for('static', filename=arac.ruhsat_photo_path.split('static/')[-1]) }}" alt="Ruhsat Fotoğrafı" class="img-thumbnail clickable-image" width="100" data-bs-toggle="modal" data-bs-target="#imageModal" data-image="{{ url_for('static', filename=arac.ruhsat_photo_path.split('static/')[-1]) }}">
+                                    {% else %}
+                                        Yok
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{{ url_for('yonetici_paneli') }}" onsubmit="return confirm('Bu aracı silmek istediğinize emin misiniz?');">
+                                        <input type="hidden" name="action" value="remove_vehicle">
+                                        <input type="hidden" name="vehicle_id" value="{{ arac.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash-alt"></i> Sil
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if vehicle_listesi|length == 0 %}
+                            <tr>
+                                <td colspan="9" class="text-center">Mevcut araç bulunmamaktadır.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ev Ekle/Sil Tab -->
+        <div class="tab-pane fade {% if active_tab == 'ev' %}show active{% endif %}" id="ev" role="tabpanel">
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-home"></i> Ev Ekle
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('yonetici_paneli') }}" enctype="multipart/form-data">
+                        {{ add_house_form.hidden_tag() }}
+                        <input type="hidden" name="action" value="add_house">
+
+                        <div class="mb-3">
+                            {{ add_house_form.address.label(class="form-label") }}
+                            {{ add_house_form.address(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.capacity.label(class="form-label") }}
+                            {{ add_house_form.capacity(class="form-control") }}
+                        </div>
+                        <div class="form-check mb-3">
+                            {{ add_house_form.insurance_status(class="form-check-input") }}
+                            {{ add_house_form.insurance_status.label(class="form-check-label") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.insurance_date.label(class="form-label") }}
+                            {{ add_house_form.insurance_date(class="form-control", type="date") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.vve_meeting_date.label(class="form-label") }}
+                            {{ add_house_form.vve_meeting_date(class="form-control", type="date") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.photos.label(class="form-label") }}
+                            {{ add_house_form.photos(class="form-control", multiple=True) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.insurance_documents.label(class="form-label") }}
+                            {{ add_house_form.insurance_documents(class="form-control", multiple=True) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.residents.label(class="form-label") }}
+                            {{ add_house_form.residents(class="form-select", multiple=True) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ add_house_form.house_type.label(class="form-label") }}
+                            {{ add_house_form.house_type(class="form-select", id="add_house_type") }}
+                        </div>
+                        
+                        <div class="mb-3" id="add_rental_price_div" style="display: none;">
+                            {{ add_house_form.rental_price.label(class="form-label") }}
+                            {{ add_house_form.rental_price(class="form-control") }}
+                        </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ add_house_form.rental_contract.label(class="form-label") }}
+                            {{ add_house_form.rental_contract(class="form-control") }}
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Ev Ekle
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mevcut Evler -->
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-list"></i> Mevcut Evler
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-striped fixed-table table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Adres</th>
+                                <th>Kapasite</th>
+                                <th>Mevcut Kişi Sayısı</th>
+                                <th>Sigorta Durumu</th>
+                                <th>Sigorta Tarihi</th>
+                                <th>VVE Toplantı Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for house in house_listesi %}
+                            <tr>
+                                <td><a href="{{ url_for('edit_house', house_id=house.id) }}">{{ house.address }}</a></td>
+                                <td>{{ house.capacity }}</td>
+                                <td>{{ house.current_residents }}</td>
+                                <td>
+                                    {% if house.insurance_status %}
+                                        <span class="badge bg-success">Sigortalı</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Sigortasız</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ house.insurance_date }}</td>
+                                <td>{{ house.vve_meeting_date }}</td>
+                                <td>
+                                    <form method="post" action="{{ url_for('yonetici_paneli') }}" onsubmit="return confirm('Bu evi silmek istediğinize emin misiniz?');">
+                                        <input type="hidden" name="action" value="remove_house">
+                                        <input type="hidden" name="house_id" value="{{ house.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash-alt"></i> Sil
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if house_listesi|length == 0 %}
+                            <tr>
+                                <td colspan="7" class="text-center">Mevcut ev bulunmamaktadır.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+    <!-- Fotoğraf Modalı -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="Görüntü" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aktif sekmeyi koruma
+        var activeTab = "{{ active_tab }}";
+        if(activeTab){
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#' + activeTab + '-tab'));
+            tabTrigger.show();
+        }
+
+        // Ceza Durumuna göre Ceza Bilgisi alanını göster/gizle
+        var penaltyStatus = document.getElementById('penalty_status');
+        if (penaltyStatus) {
+            var penaltyInfoGroup = document.getElementById('penalty_info_group');
+            penaltyStatus.addEventListener('change', function() {
+                if(this.checked) {
+                    penaltyInfoGroup.style.display = 'block';
+                } else {
+                    penaltyInfoGroup.style.display = 'none';
+                }
+            });
+        }
+
+        // Modal için görüntü güncelleme
+        var imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var imageUrl = button.getAttribute('data-image');
+                var modalImage = imageModal.querySelector('#modalImage');
+                modalImage.src = imageUrl;
+            });
+        }
+    });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var uyrukSelect = document.getElementById('personel_uyruk');
+    if (uyrukSelect) {
+        var flagIcon = document.getElementById('selected-flag');
+
+        // Sayfa yüklendiğinde seçili ülkenin bayrağını göster
+        var initialCountry = uyrukSelect.value.toLowerCase();
+        if (initialCountry) {
+            flagIcon.className = 'flag-icon flag-icon-' + initialCountry;
+        } else {
+            flagIcon.className = 'flag-icon'; // Bayrak yoksa sadece icon sınıfını bırak
+        }
+
+        // Seçim değiştiğinde bayrağı güncelle
+        uyrukSelect.addEventListener('change', function() {
+            var selectedCountry = this.value.toLowerCase();
+            if (selectedCountry) {
+                flagIcon.className = 'flag-icon flag-icon-' + selectedCountry;
+            } else {
+                flagIcon.className = 'flag-icon'; // Bayrak yoksa sadece icon sınıfını bırak
+            }
+        });
+    }
+});
+</script>
+
+<!-- İletişim Personelleri Dinamik Ekleme/Kaldırma -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var addPersonelBtn = document.getElementById('add_personel');
+    var personelContainer = document.getElementById('iletisim_personelleri');
+    var personelCount = personelContainer.getElementsByClassName('iletisim_personeli').length;
+
+    addPersonelBtn.addEventListener('click', function() {
+        var newPersonel = document.createElement('div');
+        newPersonel.classList.add('iletisim_personeli');
+        newPersonel.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_isim_${personelCount}">İsim</label>
+                <input type="text" class="form-control" id="iletisim_personel_isim_${personelCount}" name="iletisim_personel[${personelCount}][isim]" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_telefon_${personelCount}">Telefon</label>
+                <input type="text" class="form-control" id="iletisim_personel_telefon_${personelCount}" name="iletisim_personel[${personelCount}][telefon]" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_email_${personelCount}">E-mail</label>
+                <input type="email" class="form-control" id="iletisim_personel_email_${personelCount}" name="iletisim_personel[${personelCount}][email]">
+            </div>
+            <button type="button" class="btn btn-danger btn-sm remove-personel">Kaldır</button>
+            <hr>
+        `;
+        personelContainer.appendChild(newPersonel);
+        personelCount++;
+    });
+
+    personelContainer.addEventListener('click', function(e) {
+        if(e.target && e.target.classList.contains('remove-personel')) {
+            e.target.parentElement.remove();
+        }
+    });
+});
+</script>
+
+<script>
+    function updateFlag(select) {
+        const flag = select.options[select.selectedIndex].getAttribute('data-flag');
+        document.getElementById('selected-flag').className = `flag-icon flag-icon-${flag}`;
+    }
+    </script>
+
+    <!-- Aktif Pasif Butonu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const isyeriSelect = document.getElementById('calistigi_sirket');
+            const statusSelect = document.getElementById('personel_status');
+        
+            // İş yeri seçimi değiştiğinde çalışma durumunu güncelle
+            isyeriSelect.addEventListener('change', function() {
+                const selectedValue = this.value;
+                statusSelect.value = selectedValue ? 'Aktif' : 'Pasif';
+            });
+        });
+        </script>
+
+        <!-- JavaScript - form alanının dinamik gösterimi için -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const houseTypeSelect = document.getElementById('add_house_type');
+        const rentalPriceDiv = document.getElementById('add_rental_price_div');
+        
+        // Sayfa yüklendiğinde kontrol et
+        if(houseTypeSelect.value === 'rental') {
+            rentalPriceDiv.style.display = 'block';
+        } else {
+            rentalPriceDiv.style.display = 'none';
+        }
+    
+        // Seçim değiştiğinde kontrol et
+        houseTypeSelect.addEventListener('change', function() {
+            if(this.value === 'rental') {
+                rentalPriceDiv.style.display = 'block';
+            } else {
+                rentalPriceDiv.style.display = 'none';
+            }
+        });
+    });
+    </script>
+
+{% endblock %}

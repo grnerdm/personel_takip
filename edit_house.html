@@ -1,0 +1,280 @@
+{% extends "base.html" %} {% block title %}Ev Düzenle - Personel Takip
+Programı{% endblock %} {% block content %}
+<div class="container mt-4">
+  <h1>Ev Düzenle - {{ house.address }}</h1>
+
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-home me-2"></i>
+        <h5 class="card-title mb-0">Ev Bilgilerini Güncelle</h5>
+      </div>
+    </div>
+
+    <div class="card-body edit-form-container">
+      <!-- Form overlay -->
+      <div class="form-overlay active"></div>
+
+      <form method="POST" enctype="multipart/form-data" class="edit-form">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.address.label(class="form-label") }} {{
+          form.address(class="form-control edit-form-input", disabled=true) }}
+          {% for error in form.address.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.capacity.label(class="form-label") }} {{
+          form.capacity(class="form-control edit-form-input", disabled=true) }}
+          {% for error in form.capacity.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-check mb-3">
+          {{ form.insurance_status(class="form-check-input edit-form-input",
+          disabled=true) }} {{
+          form.insurance_status.label(class="form-check-label") }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.insurance_date.label(class="form-label") }} {{
+          form.insurance_date(class="form-control edit-form-input",
+          disabled=true) }} {% for error in form.insurance_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.vve_meeting_date.label(class="form-label") }} {{
+          form.vve_meeting_date(class="form-control edit-form-input",
+          disabled=true) }} {% for error in form.vve_meeting_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.photos.label(class="form-label") }} {{
+          form.photos(class="form-control edit-form-input", disabled=true) }} {%
+          if house.photos_list %}
+          <div class="row mt-2">
+            {% for photo in house.photos_list %}
+            <div class="col-md-3 mb-2">
+              <img
+                src="{{ url_for('static', filename=photo.split('static/')[-1]) }}"
+                class="img-thumbnail"
+                alt="Ev Fotoğrafı"
+              />
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.house_type.label(class="form-label") }} {{
+          form.house_type(class="form-select edit-form-input", disabled=true) }}
+        </div>
+
+        <div
+          class="mb-3"
+          id="rental_price_div"
+          {%
+          if
+          form.house_type.data
+          !="rental"
+          %}style="display: none;"
+          {%
+          endif
+          %}
+        >
+          {{ form.rental_price.label(class="form-label") }} {{
+          form.rental_price(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <!-- Düzenleme butonları -->
+        <div class="edit-buttons-container mt-4">
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="editButton"
+            style="z-index: 9999"
+          >
+            <i class="fas fa-edit"></i> Düzenle
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            id="updateButton"
+            style="display: none"
+          >
+            <i class="fas fa-save"></i> Güncelle
+          </button>
+          <a
+            href="{{ url_for('yonetici_paneli', tab='ev') }}"
+            class="btn btn-secondary"
+          >
+            <i class="fas fa-arrow-left"></i> Geri Dön
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Evde Yaşayan Personeller -->
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="card-title mb-0">Evde Yaşayan Personeller</h5>
+    </div>
+    <div class="card-body">
+      {% if house.house_personeller|length > 0 %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Personel</th>
+              <th>Haftalık Kira (€)</th>
+              <th>Durum</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for resident in house.house_personeller %}
+            <tr>
+              <td>{{ resident.personel.ad }} {{ resident.personel.soyad }}</td>
+              <td>{{ "%.2f"|format(resident.weekly_rent or 0) }}</td>
+              <td>
+                {% set payment = rent_info|selectattr('personel_id', 'equalto',
+                resident.personel.id)|list %} {% if payment and payment[0].paid
+                %}
+                <span class="badge bg-success">Ödendi</span>
+                {% else %}
+                <span class="badge bg-danger">Ödenmedi</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not payment or not payment[0].paid %}
+                <form
+                  action="{{ url_for('mark_rent_paid', house_id=house.id, personel_id=resident.personel.id) }}"
+                  method="POST"
+                  style="display: inline"
+                >
+                  <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fas fa-check"></i> Ödendi İşaretle
+                  </button>
+                </form>
+                {% else %}
+                <form
+                  action="{{ url_for('mark_rent_unpaid', house_id=house.id, personel_id=resident.personel.id) }}"
+                  method="POST"
+                  style="display: inline"
+                >
+                  <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="fas fa-times"></i> Ödenmedi İşaretle
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td><strong>Toplam</strong></td>
+              <td colspan="3">
+                <strong
+                  >{{
+                  "%.2f"|format(house.house_personeller|sum(attribute='weekly_rent'))
+                  }} €</strong
+                >
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Evde hiç personel bulunmamaktadır.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Kira Ödeme Geçmişi -->
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="card-title mb-0">Kira Ödeme Geçmişi</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Personel</th>
+              <th>İşlem</th>
+              <th>Hafta</th>
+              <th>Tutar</th>
+              <th>İşlemi Yapan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in house.rent_logs|sort(attribute='timestamp',
+            reverse=true) %}
+            <tr>
+              <td>{{ log.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+              <td>{{ log.personel.ad }} {{ log.personel.soyad }}</td>
+              <td>
+                {% if log.action == 'paid' %}
+                <span class="badge bg-success">Ödendi</span>
+                {% else %}
+                <span class="badge bg-danger">Ödenmedi</span>
+                {% endif %}
+              </td>
+              <td>{{ log.year }} - {{ log.week_number }}. Hafta</td>
+              <td>€{{ "%.2f"|format(log.amount) }}</td>
+              <td>{{ log.user.username }}</td>
+            </tr>
+            {% endfor %} {% if house.rent_logs|length == 0 %}
+            <tr>
+              <td colspan="6" class="text-center">
+                Henüz kira ödemesi kaydı bulunmamaktadır.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+  window.onload = function () {
+    var editButton = document.getElementById("editButton");
+    var updateButton = document.getElementById("updateButton");
+    var formOverlay = document.querySelector(".form-overlay");
+    var formInputs = document.querySelectorAll(".edit-form-input");
+
+    editButton.onclick = function () {
+      formInputs.forEach(function (input) {
+        input.disabled = false;
+      });
+
+      formOverlay.classList.remove("active");
+      editButton.style.display = "none";
+      updateButton.style.display = "inline-block";
+    };
+
+    // Ev tipi değiştiğinde kira bedeli alanını göster/gizle
+    var houseType = document.querySelector('select[name="house_type"]');
+    var rentalPrice = document.getElementById("rental_price_div");
+
+    if (houseType) {
+      houseType.addEventListener("change", function () {
+        rentalPrice.style.display = this.value === "rental" ? "block" : "none";
+      });
+    }
+  };
+</script>
+{% endblock %}

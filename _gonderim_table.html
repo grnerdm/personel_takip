@@ -1,0 +1,66 @@
+<!-- templates/partials/_gonderim_table.html -->
+<table class="table table-bordered table-striped table-hover fixed-table table-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>İş Yeri Adı</th>
+            <th>Araç Plakası</th>
+            <th>Araç Marka/Model</th>
+            <th>Şoför Adı</th>
+            <th>Gönderilen Personeller</th>
+            <th>Tarih</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for gonderim in gonderilenler %}
+        <tr>
+            {% set isyeri = isyeri_dict.get(gonderim.isyeri_id) %}
+            <td>{{ isyeri.ad if isyeri else 'Bilinmiyor' }}</td>
+
+            {% set arac = gonderim.arac %}
+            <td>{{ arac.arac_plaka if arac else 'Bilinmiyor' }}</td>
+            <td>{{ arac.arac_marka_model if arac else 'Bilinmiyor' }}</td>
+            <td>
+                {% if arac and arac.sofor %}
+                    {{ arac.sofor.ad }} {{ arac.sofor.soyad }}
+                {% else %}
+                    Bilinmiyor
+                {% endif %}
+            </td>
+
+            <td>
+                {% if gonderim.personeller %}
+                    {% for personel in gonderim.personeller %}
+                        {{ personel.ad }} {{ personel.soyad }}<br>
+                    {% endfor %}
+                {% else %}
+                    Yok
+                {% endif %}
+            </td>
+            <td>
+                {% set last_log = gonderim.logs|sort(attribute='tarih')|last %}
+                {% if last_log %}
+                    {{ last_log.tarih.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}
+                    {{ gonderim.tarih }}
+                {% endif %}
+            </td>         
+            <td>
+                <!-- Düzenle Butonu -->
+                <a href="{{ url_for('edit_gonderim', gonderim_id=gonderim.id) }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-edit"></i> Düzenle
+                </a>
+                <!-- Paylaş Butonu -->
+                <a href="{{ url_for('share_gonderim', gonderim_id=gonderim.id) }}" class="btn btn-primary btn-sm" target="_blank">
+                    <i class="fas fa-share"></i> Paylaş
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if gonderilenler|length == 0 %}
+        <tr>
+            <td colspan="7" class="text-center">Gönderilen iş bulunmamaktadır.</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>

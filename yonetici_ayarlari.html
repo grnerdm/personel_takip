@@ -1,0 +1,481 @@
+{% extends "base.html" %} {% block title %}Yönetici Ayarları - Personel Takip
+Programı{% endblock %} {% block content %}
+
+<div class="container mt-4">
+  <h1>Yönetici Ayarları</h1>
+
+  <!-- Sekmeler -->
+  <ul class="nav nav-tabs mt-3" role="tablist">
+    <li class="nav-item">
+      <a
+        class="nav-link {% if active_tab == 'kullanici-ekle' %}active{% endif %}"
+        id="kullanici-ekle-tab"
+        data-bs-toggle="tab"
+        href="#kullanici-ekle"
+        role="tab"
+      >
+        Kullanıcı Ekle
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {% if active_tab == 'kullanici-sil' %}active{% endif %}"
+        id="kullanici-sil-tab"
+        data-bs-toggle="tab"
+        href="#kullanici-sil"
+        role="tab"
+      >
+        Kullanıcı Sil
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {% if active_tab == 'loglar' %}active{% endif %}"
+        id="loglar-tab"
+        data-bs-toggle="tab"
+        href="#loglar"
+        role="tab"
+      >
+        Loglar
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {% if active_tab == 'veritabani-yonetimi' %}active{% endif %}"
+        id="veritabani-yonetimi-tab"
+        data-bs-toggle="tab"
+        href="#veritabani-yonetimi"
+        role="tab"
+      >
+        Veritabanı Yönetimi
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {% if active_tab == 'izin-ayarlari' %}active{% endif %}"
+        id="izin-ayarlari-tab"
+        data-bs-toggle="tab"
+        href="#izin-ayarlari"
+        role="tab"
+      >
+        İzin Ayarları
+      </a>
+    </li>
+  </ul>
+
+  <!-- Sekme İçerikleri -->
+  <div class="tab-content" id="adminSettingsTabContent">
+    <!-- Kullanıcı Ekle -->
+    <div
+      id="kullanici-ekle"
+      class="tab-pane fade {% if active_tab == 'kullanici-ekle' %}show active{% endif %}"
+      role="tabpanel"
+    >
+      <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="card-title mb-0">Kullanıcı Ekle</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('yonetici_ayarlari') }}">
+            <input type="hidden" name="action" value="add_user" />
+            <div class="mb-3">
+              <label for="username" class="form-label">Kullanıcı Adı:</label>
+              <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Şifre:</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="role" class="form-label">Rol:</label>
+              <select class="form-select" id="role" name="role" required>
+                <option value="">Rol Seçiniz</option>
+                <option value="manager">Menajer</option>
+                <option value="admin">Yönetici</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              Kullanıcı Ekle
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kullanıcı Sil -->
+    <div
+      id="kullanici-sil"
+      class="tab-pane fade {% if active_tab == 'kullanici-sil' %}show active{% endif %}"
+      role="tabpanel"
+    >
+      <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="card-title mb-0">Mevcut Kullanıcılar</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Kullanıcı Adı</th>
+                  <th>Rol</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                <tr>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.role.capitalize() }}</td>
+                  <td>
+                    {% if user.username != current_user.username %}
+                    <form
+                      method="POST"
+                      action="{{ url_for('yonetici_ayarlari') }}"
+                      class="d-inline"
+                    >
+                      <input type="hidden" name="action" value="remove_user" />
+                      <input
+                        type="hidden"
+                        name="user_id"
+                        value="{{ user.id }}"
+                      />
+                      <button
+                        type="submit"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')"
+                      >
+                        Sil
+                      </button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">Kendinizi silemezsiniz</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loglar -->
+    <div
+      id="loglar"
+      class="tab-pane fade {% if active_tab == 'loglar' %}show active{% endif %}"
+      role="tabpanel"
+    >
+      <h3 class="mt-4">Kullanıcı İşlem Logları</h3>
+      <div class="card mt-3">
+        <div class="card-body table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Kullanıcı Adı</th>
+                <th>İşlem</th>
+                <th>Tarih</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in logs %}
+              <tr>
+                <td>{{ log.user.username }}</td>
+                <td>{{ log.action }}</td>
+                <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Veritabanı Yönetimi -->
+    <div
+      id="veritabani-yonetimi"
+      class="tab-pane fade {% if active_tab == 'veritabani-yonetimi' %}show active{% endif %}"
+      role="tabpanel"
+    >
+      <!-- Yedekleme -->
+      <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="card-title mb-0">Veritabanını Yedekle</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('manual_backup') }}">
+            <button type="submit" class="btn btn-success">
+              Manuel Yedek Al
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Mevcut Yedekler -->
+      <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="card-title mb-0">Mevcut Yedekler</h5>
+        </div>
+        <div class="card-body table-responsive">
+          {% if backups %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Yedek Dosyası</th>
+                <th>Oluşturulma Tarihi</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for backup in backups %}
+              <tr>
+                <td>{{ backup }}</td>
+                <td>
+                  {{ backup.split('_')[1].split('.db')[0] | replace('_', ' ') }}
+                </td>
+                <td>
+                  <a
+                    href="{{ url_for('download_backup', filename=backup) }}"
+                    class="btn btn-success btn-sm"
+                    >İndir</a
+                  >
+                  <form
+                    method="POST"
+                    action="{{ url_for('delete_backup', filename=backup) }}"
+                    class="d-inline"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('Bu yedeği silmek istediğinizden emin misiniz?')"
+                    >
+                      Sil
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p>Hiç yedek dosyası bulunmamaktadır.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Veritabanı Geri Yükleme -->
+      <div class="card mt-4">
+        <div class="card-header bg-warning text-white">
+          <h5 class="card-title mb-0">Veritabanını Geri Yükle</h5>
+        </div>
+        <div class="card-body">
+          <form
+            method="POST"
+            action="{{ url_for('restore_backup') }}"
+            enctype="multipart/form-data"
+          >
+            <div class="mb-3">
+              <label for="backup_file" class="form-label"
+                >Yedek Dosyası (.db)</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="backup_file"
+                name="backup_file"
+                accept=".db"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-warning">Geri Yükle</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- İzin Ayarları -->
+    <div
+      id="izin-ayarlari"
+      class="tab-pane fade {% if active_tab == 'izin-ayarlari' %}show active{% endif %}"
+      role="tabpanel"
+    >
+      <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="card-title mb-0">İzin Ayarları</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('update_leave_settings') }}">
+            {{ leave_settings_form.hidden_tag() }}
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <div class="form-group">
+                  {{ leave_settings_form.saat_esigi.label(class="form-label") }}
+                  {{ leave_settings_form.saat_esigi(class="form-control") }}
+                  <small class="form-text text-muted">
+                    {{ leave_settings_form.saat_esigi.description }}
+                  </small>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="form-group">
+                  {{ leave_settings_form.ay_esigi.label(class="form-label") }}
+                  {{ leave_settings_form.ay_esigi(class="form-control") }}
+                  <small class="form-text text-muted">
+                    {{ leave_settings_form.ay_esigi.description }}
+                  </small>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="form-group">
+                  {{
+                  leave_settings_form.izin_gun_sayisi.label(class="form-label")
+                  }} {{
+                  leave_settings_form.izin_gun_sayisi(class="form-control") }}
+                  <small class="form-text text-muted">
+                    {{ leave_settings_form.izin_gun_sayisi.description }}
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i>
+              Personel, belirlenen saat eşiğine ulaştığında veya ay eşiğini
+              doldurduğunda (hangisi önce gerçekleşirse) izin hakkı kazanır ve
+              belirtilen gün sayısı kadar izin kullanabilir.
+            </div>
+
+            <div class="text-end">
+              {{ leave_settings_form.guncelle(class="btn btn-primary") }}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- İzin Hakkı Doğan Personeller -->
+      <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="card-title mb-0">İzin Hakkı Doğan Personeller</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Personel</th>
+                  <th>Çalışma Süresi</th>
+                  <th>Toplam Saat</th>
+                  <th>Kalan İzin</th>
+                  <th>Durum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for personel in personel_listesi if personel.izin_hakki_var
+                %}
+                <tr>
+                  <td>
+                    <a
+                      href="{{ url_for('edit_personel', personel_id=personel.id) }}"
+                    >
+                      {{ personel.ad }} {{ personel.soyad }}
+                    </a>
+                  </td>
+                  <td>
+                    {% set sure = calculate_working_duration(personel) %} {% if
+                    sure %} {{ sure.years }} yıl {{ sure.months }} ay {{
+                    sure.days }} gün {% else %} - {% endif %}
+                  </td>
+                  <td>{{ calculate_total_working_hours(personel.id) }} saat</td>
+                  <td>{{ personel.kalan_izin_gunu }} gün</td>
+                  <td>
+                    {% if personel.aktif_izin %}
+                    <span class="badge bg-success">İzinde</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark"
+                      >İzin Kullanabilir</span
+                    >
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center">
+                    İzin hakkı doğan personel bulunmamaktadır.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resim Görüntüleme Modalı -->
+<div
+  id="imageModal"
+  class="modal fade"
+  tabindex="-1"
+  aria-labelledby="imageModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body">
+        <img id="modalImage" class="img-fluid" src="" alt="Görüntü" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_scripts %}
+<script>
+  // Resim modalı için JavaScript
+  document.querySelectorAll(".clickable-image").forEach(function (img) {
+    img.addEventListener("click", function () {
+      document.getElementById("modalImage").src = this.getAttribute("image");
+      var imageModal = new bootstrap.Modal(
+        document.getElementById("imageModal")
+      );
+      imageModal.show();
+    });
+  });
+
+  // İzin ayarları form validasyonu
+  document
+    .querySelector('form[action="{{ url_for("update_leave_settings") }}"]')
+    ?.addEventListener("submit", function (e) {
+      const saat = parseInt(this.querySelector("#saat_esigi").value);
+      const ay = parseInt(this.querySelector("#ay_esigi").value);
+      const gun = parseInt(this.querySelector("#izin_gun_sayisi").value);
+
+      if (saat < 0 || ay < 0 || gun < 0) {
+        e.preventDefault();
+        alert("Lütfen geçerli pozitif değerler girin.");
+        return false;
+      }
+
+      return true;
+    });
+</script>
+{% endblock %}

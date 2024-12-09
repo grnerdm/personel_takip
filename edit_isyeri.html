@@ -1,0 +1,278 @@
+<!-- templates/edit_isyeri.html -->
+{% extends "base.html" %}
+
+{% block title %}İşyeri Düzenle - Personel Takip Programı{% endblock %}
+
+{% block extra_head %}
+<style>
+    .fixed-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .fixed-table th, .fixed-table td {
+        font-size: 0.85rem;
+        word-wrap: break-word;
+        white-space: normal;
+        padding: 0.5rem;
+    }
+
+    /* Responsive Tasarım */
+    @media (max-width: 768px) {
+        .form-row > .form-group {
+            margin-bottom: 1rem;
+        }
+
+        /* Tablolarda gereksiz sütunları gizleme */
+        .fixed-table th:nth-child(5),
+        .fixed-table td:nth-child(5),
+        .fixed-table th:nth-child(6),
+        .fixed-table td:nth-child(6),
+        .fixed-table th:nth-child(7),
+        .fixed-table td:nth-child(7),
+        .fixed-table th:nth-child(8),
+        .fixed-table td:nth-child(8),
+        .fixed-table th:nth-child(9),
+        .fixed-table td:nth-child(9) {
+            display: none;
+        }
+    }
+
+    /* Buton ikonları için küçük boyut */
+    .btn i {
+        margin-right: 5px;
+    }
+
+    /* İletişim Personeli Bölümü */
+    .iletisim_personeli {
+        border: 1px solid #ced4da;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    
+    .remove-personel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>İşyeri Düzenle</h1>
+
+    <!-- İşyeri Düzenleme Formu -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-edit"></i> İşyeri Düzenle
+        </div>
+        <div class="card-body edit-form-container">
+            <!-- Form overlay -->
+            <div class="form-overlay active"></div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('edit_isyeri', isyeri_id=isyeri.id) }}">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="action" value="update_isyeri">
+
+                 <div class="mb-3">
+                    {{ form.ad.label(class="form-label") }}
+                    {{ form.ad(class="form-control edit-form-input", disabled=true) }}
+                    {% for error in form.ad.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.kvk_nummer.label(class="form-label") }}
+                    {{ form.kvk_nummer(class="form-control edit-form-input", disabled=true) }}
+                    {% for error in form.kvk_nummer.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.sahib.label(class="form-label") }}
+                    {{ form.sahib(class="form-control", disabled=true) }}
+                    {% for error in form.sahib.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.iletisim_telefon.label(class="form-label") }}
+                    {{ form.iletisim_telefon(class="form-control", disabled=true) }}
+                    {% for error in form.iletisim_telefon.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.faaliyet_sektoru.label(class="form-label") }}
+                    {{ form.faaliyet_sektoru(class="form-control", disabled=true) }}
+                    {% for error in form.faaliyet_sektoru.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.banka_hesabi.label(class="form-label") }}
+                    {{ form.banka_hesabi(class="form-control", disabled=true) }}
+                    {% for error in form.banka_hesabi.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.adres.label(class="form-label") }}
+                    {{ form.adres(class="form-control", disabled=true) }}
+                    {% for error in form.adres.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- İletişim Personelleri Eklemek için -->
+                <h4>İletişim Personelleri</h4>
+                <div id="iletisim_personelleri">
+                    {% for subform in form.iletisim_personelleri %}
+                    <div class="iletisim_personeli">
+                        <!-- İsim -->
+                        <div class="mb-3">
+                            {{ subform.isim.label(class="form-label") }}
+                            {{ subform.isim(class="form-control") }}
+                            {% for error in subform.isim.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Telefon -->
+                        <div class="mb-3">
+                            {{ subform.telefon.label(class="form-label") }}
+                            {{ subform.telefon(class="form-control") }}
+                            {% for error in subform.telefon.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- E-mail -->
+                        <div class="mb-3">
+                            {{ subform.email.label(class="form-label") }}
+                            {{ subform.email(class="form-control") }}
+                            {% for error in subform.email.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Kaldır Butonu -->
+                        <button type="button" class="btn btn-danger btn-sm remove-personel">Kaldır</button>
+                        <hr>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- İletişim Personeli Ekle Butonu -->
+                <button type="button" class="btn btn-secondary btn-sm" id="add_personel">İletişim Personeli Ekle</button>
+                <br><br>
+
+                               <!-- Düzenleme butonları -->
+                               <div class="edit-buttons-container mt-4">
+                                <button type="button" class="btn btn-primary" id="editButton" style="z-index: 9999;">
+                                    <i class="fas fa-edit"></i> Düzenle
+                                </button>
+                                <button type="submit" class="btn btn-success" id="updateButton" style="display: none;">
+                                    <i class="fas fa-save"></i> Güncelle
+                                </button>
+                                <a href="{{ url_for('yonetici_paneli', tab='isyeri') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Geri Dön
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Fotoğraf Modalı -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Görüntü" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // İletişim Personelleri Dinamik Ekleme/Kaldırma
+        var addPersonelBtn = document.getElementById('add_personel');
+        var personelContainer = document.getElementById('iletisim_personelleri');
+        var personelCount = personelContainer.getElementsByClassName('iletisim_personeli').length;
+
+        addPersonelBtn.addEventListener('click', function() {
+            var newPersonel = document.createElement('div');
+            newPersonel.classList.add('iletisim_personeli');
+            newPersonel.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label" for="iletisim_personel_isim_${personelCount}">İsim</label>
+                    <input type="text" class="form-control" id="iletisim_personel_isim_${personelCount}" name="iletisim_personel[${personelCount}][isim]" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="iletisim_personel_telefon_${personelCount}">Telefon</label>
+                    <input type="text" class="form-control" id="iletisim_personel_telefon_${personelCount}" name="iletisim_personel[${personelCount}][telefon]" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="iletisim_personel_email_${personelCount}">E-mail</label>
+                    <input type="email" class="form-control" id="iletisim_personel_email_${personelCount}" name="iletisim_personel[${personelCount}][email]">
+                </div>
+                <button type="button" class="btn btn-danger btn-sm remove-personel">Kaldır</button>
+                <hr>
+            `;
+            personelContainer.appendChild(newPersonel);
+            personelCount++;
+        });
+
+        personelContainer.addEventListener('click', function(e) {
+            if(e.target && e.target.classList.contains('remove-personel')) {
+                e.target.parentElement.remove();
+            }
+        });
+
+        // Modal için görüntü güncelleme
+        var imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var imageUrl = button.getAttribute('data-image');
+                var modalImage = imageModal.querySelector('#modalImage');
+                modalImage.src = imageUrl;
+            });
+        }
+    });
+</script>
+<script>
+    window.onload = function() {
+        var editButton = document.getElementById('editButton');
+        var updateButton = document.getElementById('updateButton');
+        var formOverlay = document.querySelector('.form-overlay');
+        var formInputs = document.querySelectorAll('.edit-form-input');
+
+        editButton.onclick = function() {
+            formInputs.forEach(function(input) {
+                input.disabled = false;
+            });
+            
+            formOverlay.classList.remove('active');
+            editButton.style.display = 'none';
+            updateButton.style.display = 'inline-block';
+        };
+    };
+</script>
+{% endblock %}

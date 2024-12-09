@@ -1,0 +1,93 @@
+<table
+  class="table table-bordered table-striped table-hover fixed-table personel-table table-sm"
+>
+  <thead class="table-dark">
+    <tr>
+      <th>Uyruk</th>
+      <!-- Yeni eklendi -->
+      <th>Ad</th>
+      <th>Soyad</th>
+      <th>Çalışma Durumu</th>
+      <!-- Yeni eklendi -->
+      <th>E-mail</th>
+      <th>Telefon</th>
+      <th>Adres</th>
+      <th>Banka Hesabı</th>
+      <th>Çalıştığı Şirket</th>
+      <th>Bilgi</th>
+      <th>Fotoğraf</th>
+      <th>Kimlik Fotoğrafı</th>
+      <th>BSN Numarası</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for personel in personel_listesi %}
+    <tr>
+      <td style="width: 60px; text-align: center">
+        {% if personel.uyruk %}
+        <span class="fi fi-{{ personel.uyruk }}"></span>
+        {% else %} - {% endif %}
+      </td>
+      <td>
+        <a href="{{ url_for('edit_personel', personel_id=personel.id) }}"
+          >{{ personel.ad }}</a
+        >
+      </td>
+      <td>
+        <a href="{{ url_for('edit_personel', personel_id=personel.id) }}"
+          >{{ personel.soyad }}</a
+        >
+      </td>
+      <td>
+        {% if personel.calistigi_sirket %}
+        <span class="badge bg-success">Aktif</span>
+        {% else %}
+        <span class="badge bg-danger">Pasif</span>
+        {% endif %}
+      </td>
+      <td>{{ personel.email }}</td>
+      <td>{{ personel.telefon }}</td>
+      <td>{{ personel.adres }}</td>
+      <td>{{ personel.banka_hesabi }}</td>
+      <td>
+        {% if personel.calistigi_sirket %} {{ personel.calistigi_sirket.ad }} {%
+        else %}
+        <span class="text-muted">İş Yeri Yok</span>
+        {% endif %}
+      </td>
+      <td>{{ personel.bilgi }}</td>
+      <td>
+        {% if personel.foto_path %}
+        <img
+          src="{{ url_for('static', filename='uploads/' + personel.foto_path.split('/')[-1]) }}"
+          alt="Personel Fotoğrafı"
+          class="img-thumbnail clickable-image"
+          data-bs-toggle="modal"
+          data-bs-target="#imageModal"
+          data-image="{{ url_for('static', filename='uploads/' + personel.foto_path.split('/')[-1]) }}"
+          loading="lazy"
+        />
+        {% else %} Yok {% endif %}
+      </td>
+      <td>
+        {% if personel.kimlik_foto_path %}
+        <img
+          src="{{ url_for('static', filename='uploads/' + personel.kimlik_foto_path.split('/')[-1]) }}"
+          alt="Kimlik Fotoğrafı"
+          class="img-thumbnail clickable-image"
+          data-bs-toggle="modal"
+          data-bs-target="#imageModal"
+          data-image="{{ url_for('static', filename='uploads/' + personel.kimlik_foto_path.split('/')[-1]) }}"
+          loading="lazy"
+        />
+        {% else %} Yok {% endif %}
+      </td>
+      <td>{{ personel.bsn_numarasi if personel.bsn_numarasi else 'Yok' }}</td>
+    </tr>
+    {% endfor %} {% if personel_listesi|length == 0 %}
+    <tr>
+      <td colspan="11" class="text-center">Mevcut personel bulunmamaktadır.</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>

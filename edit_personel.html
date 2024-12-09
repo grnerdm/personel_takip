@@ -1,0 +1,351 @@
+{% extends "base.html" %} {% block title %}Personel Düzenle{% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h1>Personel Düzenle - {{ personel.ad }}</h1>
+
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-user-edit me-2"></i>
+        <h5 class="card-title mb-0">Personel Bilgilerini Güncelle</h5>
+      </div>
+    </div>
+
+    <div class="card-body edit-form-container">
+      <!-- Form overlay -->
+      <div class="form-overlay active"></div>
+
+      <form method="POST" enctype="multipart/form-data" class="edit-form">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.ad.label(class="form-label") }} {{ form.ad(class="form-control
+          edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.soyad.label(class="form-label") }} {{
+          form.soyad(class="form-control edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.status.label(class="form-label") }} {{
+          form.status(class="form-select edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.email.label(class="form-label") }} {{
+          form.email(class="form-control edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.telefon.label(class="form-label") }} {{
+          form.telefon(class="form-control edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.adres.label(class="form-label") }} {{
+          form.adres(class="form-control edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.banka_hesabi.label(class="form-label") }} {{
+          form.banka_hesabi(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.calistigi_sirket_id.label(class="form-label") }} {{
+          form.calistigi_sirket_id(class="form-select edit-form-input",
+          disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.bilgi.label(class="form-label") }} {{
+          form.bilgi(class="form-control edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.bsn_numarasi.label(class="form-label") }} {{
+          form.bsn_numarasi(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.uyruk.label(class="form-label") }} {{
+          form.uyruk(class="form-select edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Fotoğraf</label>
+          {% if personel.foto_path %}
+          <div class="mb-2">
+            <img
+              src="{{ url_for('static', filename='uploads/' ~ personel.foto_path.split('/')[-1]) }}"
+              class="img-thumbnail"
+              width="100"
+              alt="Personel Fotoğrafı"
+            />
+          </div>
+          {% else %}
+          <div class="text-muted mb-2">Fotoğraf Yok</div>
+          {% endif %} {{ form.foto_path(class="form-control edit-form-input",
+          disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Kimlik Fotoğrafı</label>
+          {% if personel.kimlik_foto_path %}
+          <div class="mb-2">
+            <img
+              src="{{ url_for('static', filename='uploads/' ~ personel.kimlik_foto_path.split('/')[-1]) }}"
+              class="img-thumbnail"
+              width="100"
+              alt="Kimlik Fotoğrafı"
+            />
+          </div>
+          {% else %}
+          <div class="text-muted mb-2">Kimlik Fotoğrafı Yok</div>
+          {% endif %} {{ form.kimlik_foto_path(class="form-control
+          edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.house_id.label(class="form-label") }} {{
+          form.house_id(class="form-select edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.weekly_rent.label(class="form-label") }} {{
+          form.weekly_rent(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <!-- Düzenleme butonları -->
+        <div class="edit-buttons-container mt-4">
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="editButton"
+            style="z-index: 9999"
+          >
+            <i class="fas fa-edit"></i> Düzenle
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            id="updateButton"
+            style="display: none"
+          >
+            <i class="fas fa-save"></i> Güncelle
+          </button>
+          <a
+            href="{{ url_for('yonetici_paneli', tab='personel') }}"
+            class="btn btn-secondary"
+          >
+            <i class="fas fa-arrow-left"></i> Geri Dön
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="card-title mb-0">İzin Durumu</h5>
+    </div>
+    <div class="card-body">
+      <!-- Çalışma Bilgileri -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <h6>Toplam Çalışma Süresi</h6>
+          {% set calisma_suresi = calculate_working_duration(personel) %} {% if
+          calisma_suresi %}
+          <p>
+            <strong
+              >{{ calisma_suresi.years }} yıl {{ calisma_suresi.months }} ay {{
+              calisma_suresi.days }} gün</strong
+            >
+          </p>
+          <p class="text-muted small">
+            Toplam: {{ calculate_total_working_hours(personel.id) }} saat
+          </p>
+          {% else %}
+          <p class="text-muted">Çalışma süresi hesaplanamadı</p>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <h6>İzin Hakkı Durumu</h6>
+          {% if personel.izin_hakki_var %}
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>İzin Gerekli!</strong><br />
+            Kullanılabilir İzin: {{ personel.kalan_izin_gunu }} gün
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Henüz izin hakkı doğmamış<br />
+            {% set ayarlar = get_izin_ayarlari() %} {% if ayarlar %} Gerekli: {%
+            if calculate_total_working_hours(personel.id) < ayarlar.saat_esigi
+            %} {{ ayarlar.saat_esigi -
+            calculate_total_working_hours(personel.id) }} saat {% endif %} {% if
+            calisma_suresi and calisma_suresi.total_months < ayarlar.ay_esigi %}
+            veya {{ ayarlar.ay_esigi - calisma_suresi.total_months }} ay {%
+            endif %} {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <h6>Mevcut İzin Durumu</h6>
+          {% if personel.aktif_izin %}
+          <div class="alert alert-success">
+            <i class="fas fa-calendar-check"></i>
+            <strong>İzinde</strong><br />
+            {{ personel.aktif_izin.baslangic_tarihi.strftime('%d.%m.%Y') }} - {{
+            personel.aktif_izin.bitis_tarihi.strftime('%d.%m.%Y') }}
+            <br />
+            <small class="text-muted"
+              >{{ personel.aktif_izin.izin_turu }}</small
+            >
+          </div>
+          {% else %}
+          <div class="alert alert-secondary">
+            <i class="fas fa-calendar"></i>
+            İzinde Değil
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Manuel İzin Ekleme Formu -->
+      {% if not personel.aktif_izin %}
+      <div class="row mt-3">
+        <div class="col-12">
+          <h6>Yeni İzin Ekle</h6>
+          <form
+            method="POST"
+            action="{{ url_for('izin_ekle', personel_id=personel.id) }}"
+          >
+            {{ izin_form.hidden_tag() }}
+            <div class="row">
+              <div class="col-md-3">
+                {{ izin_form.baslangic_tarihi.label(class="form-label") }} {{
+                izin_form.baslangic_tarihi(class="form-control") }}
+              </div>
+              <div class="col-md-3">
+                {{ izin_form.bitis_tarihi.label(class="form-label") }} {{
+                izin_form.bitis_tarihi(class="form-control") }}
+              </div>
+              <div class="col-md-3">
+                {{ izin_form.izin_turu.label(class="form-label") }} {{
+                izin_form.izin_turu(class="form-select") }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                {{ izin_form.kaydet(class="btn btn-primary w-100") }}
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-12">
+                {{ izin_form.aciklama.label(class="form-label") }} {{
+                izin_form.aciklama(class="form-control", rows="2") }}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- İzin Geçmişi -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h6>İzin Geçmişi</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Tarih Aralığı</th>
+                  <th>İzin Türü</th>
+                  <th>Süre</th>
+                  <th>Durum</th>
+                  <th>Açıklama</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for izin in
+                personel.izin_kayitlari|sort(attribute='baslangic_tarihi',
+                reverse=true) %}
+                <tr>
+                  <td>
+                    {{ izin.baslangic_tarihi.strftime('%d.%m.%Y') }} - {{
+                    izin.bitis_tarihi.strftime('%d.%m.%Y') }}
+                  </td>
+                  <td>{{ izin.izin_turu }}</td>
+                  <td>{{ izin.get_total_days() }} gün</td>
+                  <td>
+                    {% if izin.durum == 'aktif' %}
+                    <span class="badge bg-success">Aktif</span>
+                    {% elif izin.durum == 'tamamlandi' %}
+                    <span class="badge bg-secondary">Tamamlandı</span>
+                    {% else %}
+                    <span class="badge bg-warning">{{ izin.durum }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ izin.aciklama }}</td>
+                  <td>
+                    {% if izin.durum == 'aktif' %}
+                    <form
+                      method="POST"
+                      action="{{ url_for('izin_bitir', izin_id=izin.id) }}"
+                      class="d-inline"
+                    >
+                      <button
+                        type="submit"
+                        class="btn btn-sm btn-warning"
+                        onclick="return confirm('İzni sonlandırmak istediğinizden emin misiniz?')"
+                      >
+                        İzni Bitir
+                      </button>
+                    </form>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="6" class="text-center">
+                    İzin kaydı bulunmamaktadır.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Personel Detay Kartları -->
+  {{ edit_personel_details|safe }}
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+  window.onload = function () {
+    var editButton = document.getElementById("editButton");
+    var updateButton = document.getElementById("updateButton");
+    var formOverlay = document.querySelector(".form-overlay");
+    var formInputs = document.querySelectorAll(".edit-form-input");
+
+    editButton.onclick = function () {
+      formInputs.forEach(function (input) {
+        input.disabled = false;
+      });
+
+      formOverlay.classList.remove("active");
+      editButton.style.display = "none";
+      updateButton.style.display = "inline-block";
+    };
+  };
+</script>
+{% endblock %}

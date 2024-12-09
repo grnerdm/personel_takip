@@ -1,0 +1,228 @@
+{# Personel Detay Kartları için Partial Template #}
+
+<!-- Kaldığı Ev Bilgileri -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-home me-2"></i>
+            <h5 class="card-title mb-0">Kaldığı Ev Bilgileri</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if personel.house_personeller %}
+            {% set house_personel = personel.house_personeller[0] %}
+            {% set house = house_personel.house %}
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th style="width: 200px;">Ev Adresi:</th>
+                        <td>{{ house.address }}</td>
+                    </tr>
+                    <tr>
+                        <th>Haftalık Kira:</th>
+                        <td>€{{ "%.2f"|format(house_personel.weekly_rent or 0) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Bu Haftaki Ödeme Durumu:</th>
+                        <td>
+                            {% set current_payment = house.rent_payments|selectattr('personel_id', 'equalto', personel.id)|first %}
+                            {% if current_payment and current_payment.paid %}
+                                <span class="badge bg-success">Ödendi</span>
+                            {% else %}
+                                <span class="badge bg-danger">Ödenmedi</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Ev Tipi:</th>
+                        <td>
+                            {% if house.house_type == 'company' %}
+                                Şirkete Ait
+                            {% else %}
+                                Kiralık
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Personel herhangi bir evde kalmıyor.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Çalıştığı Şirket Bilgileri -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-building me-2"></i>
+            <h5 class="card-title mb-0">Çalıştığı Şirket Bilgileri</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if personel.calistigi_sirket %}
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th style="width: 200px;">Şirket Adı:</th>
+                        <td>{{ personel.calistigi_sirket.ad }}</td>
+                    </tr>
+                    <tr>
+                        <th>İletişim Telefonu:</th>
+                        <td>{{ personel.calistigi_sirket.iletisim_telefon }}</td>
+                    </tr>
+                    <tr>
+                        <th>Adres:</th>
+                        <td>{{ personel.calistigi_sirket.adres }}</td>
+                    </tr>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Personel herhangi bir şirkette çalışmıyor.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Şoför Bilgileri -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-car me-2"></i>
+            <h5 class="card-title mb-0">Kullandığı Araç Bilgileri</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if personel.araclar %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Araç Plaka</th>
+                            <th>Marka/Model</th>
+                            <th>KM</th>
+                            <th>Bakım Durumu</th>
+                            <th>Park Bölgesi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for arac in personel.araclar %}
+                            <tr>
+                                <td>{{ arac.arac_plaka }}</td>
+                                <td>{{ arac.arac_marka_model }}</td>
+                                <td>{{ arac.km }}</td>
+                                <td>
+                                    {% if arac.maintenance_status %}
+                                        <span class="badge bg-success">Bakım Yapıldı</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Bakım Gerekli</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ arac.parking_zone }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Personel şoför değil veya atanmış araç bulunmuyor.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Maaş Geçmişi -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-file-invoice-dollar me-2"></i>
+            <h5 class="card-title mb-0">Maaş Geçmişi</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if personel.salaries %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Standart Saatler</th>
+                            <th>Ek Saatler</th>
+                            <th>Brüt Ücret</th>
+                            <th>Kesintiler</th>
+                            <th>Net Ücret</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for salary in personel.salaries|sort(attribute='date', reverse=true) %}
+                            <tr>
+                                <td>{{ salary.date.strftime('%d.%m.%Y') }}</td>
+                                <td>{{ salary.standart_saatler }}</td>
+                                <td>
+                                    H.Sonu: {{ salary.hafta_sonu_saatleri }}<br>
+                                    Gece: {{ salary.gece_saatleri }}<br>
+                                    Tatil: {{ salary.tatil_saatleri }}
+                                </td>
+                                <td>€{{ "%.2f"|format(salary.toplam_brut) }}</td>
+                                <td>€{{ "%.2f"|format(salary.toplam_kesintiler) }}</td>
+                                <td>€{{ "%.2f"|format(salary.net_gelir) }}</td>
+                                <td>
+                                    <form action="{{ url_for('bordro_indir', salary_id=salary.id) }}" method="POST">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-download"></i> Bordro
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Henüz maaş ödemesi kaydı bulunmuyor.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Gönderim Geçmişi -->
+<div class="card mt-4 mb-4">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-truck me-2"></i>
+            <h5 class="card-title mb-0">Gönderim Geçmişi</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if personel.gonderimler %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>İş Yeri</th>
+                            <th>Araç</th>
+                            <th>Şoför</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gonderim in personel.gonderimler|sort(attribute='tarih', reverse=true) %}
+                            <tr>
+                                <td>{{ gonderim.tarih }}</td>
+                                <td>{{ gonderim.isyeri.ad if gonderim.isyeri else 'Belirtilmemiş' }}</td>
+                                <td>{{ gonderim.arac.arac_plaka if gonderim.arac else 'Belirtilmemiş' }}</td>
+                                <td>
+                                    {% if gonderim.arac and gonderim.arac.sofor %}
+                                        {{ gonderim.arac.sofor.ad }} {{ gonderim.arac.sofor.soyad }}
+                                    {% else %}
+                                        Belirtilmemiş
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Henüz gönderim kaydı bulunmuyor.</p>
+        {% endif %}
+    </div>
+</div>

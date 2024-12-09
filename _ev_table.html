@@ -1,0 +1,57 @@
+<table
+  class="table table-bordered table-striped table-hover fixed-table ev-table table-sm"
+>
+  <thead class="table-dark">
+    <tr>
+      <th>Adres</th>
+      <th>Kapasite</th>
+      <th>Mevcut Kişi Sayısı</th>
+      <th>Sigorta Durumu</th>
+      <th>Sigorta Tarihi</th>
+      <th>VVE Toplantı Tarihi</th>
+      <th>Evde Kalan Personeller</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for house in ev_listesi %}
+    <tr>
+      <td>
+        <a href="{{ url_for('edit_house', house_id=house.id) }}"
+          >{{ house.address }}</a
+        >
+      </td>
+      <td>{{ house.capacity }}</td>
+      <td>{{ house.current_residents }}</td>
+      <td>
+        {% if house.insurance_status %}
+        <span class="badge bg-success">Sigortalı</span>
+        {% else %}
+        <span class="badge bg-danger">Sigortasız</span>
+        {% endif %}
+      </td>
+      <td>
+        {{ house.insurance_date if house.insurance_date else 'Belirtilmemiş' }}
+      </td>
+      <td>
+        {{ house.vve_meeting_date if house.vve_meeting_date else 'Belirtilmemiş'
+        }}
+      </td>
+      <td>
+        {% if ev_personel_dict.get(house.id) %}
+        <ul class="list-unstyled mb-0">
+          {% for personel in ev_personel_dict[house.id] %}
+          <li>{{ personel }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <span class="text-muted">Yok</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %} {% if ev_listesi|length == 0 %}
+    <tr>
+      <td colspan="7" class="text-center">Mevcut ev bulunmamaktadır.</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>

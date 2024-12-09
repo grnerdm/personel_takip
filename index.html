@@ -1,0 +1,285 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Anasayfa - Personel Takip Programı{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Genel stiller */
+    .table-responsive {
+        margin-top: 1rem;
+    }
+
+    /* Fotoğraf boyutlarını küçültme */
+    .fixed-table img {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+    }
+
+    /* Bayrak ikonlarının boyutunu ayarlama */
+    .flag-icon {
+        width: 32px;
+        height: 24px;
+    }
+
+    /* Responsive Tasarım */
+    @media (max-width: 768px) {
+        /* Tablolarda gereksiz sütunları gizleme */
+        .isyeri-table th:nth-child(3),
+        .isyeri-table td:nth-child(3),
+        /* Diğer sütunlar için de benzer şekilde devam edin */
+        .personel-table th:nth-child(5),
+        .personel-table td:nth-child(5) {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Sekme Butonları -->
+    <ul class="nav nav-tabs flex-wrap" id="indexTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="isyeri-tab" data-bs-toggle="tab" data-bs-target="#isyeri" type="button" role="tab" aria-controls="isyeri" aria-selected="true">
+                İş Yeri Listesi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="personel-tab" data-bs-toggle="tab" data-bs-target="#personel" type="button" role="tab" aria-controls="personel" aria-selected="false">
+                Personel Listesi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="arac-tab" data-bs-toggle="tab" data-bs-target="#arac" type="button" role="tab" aria-controls="arac" aria-selected="false">
+                Araç Listesi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gonderim-tab" data-bs-toggle="tab" data-bs-target="#gonderim" type="button" role="tab" aria-controls="gonderim" aria-selected="false">
+                Gönderilen İşler
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ev-tab" data-bs-toggle="tab" data-bs-target="#ev" type="button" role="tab" aria-controls="ev" aria-selected="false">
+                Ev Listesi
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="indexTabContent">
+        <!-- İş Yeri Listesi Sekmesi -->
+        <div class="tab-pane fade show active" id="isyeri" role="tabpanel" aria-labelledby="isyeri-tab">
+            <h2 class="mt-4"><i class="fas fa-building"></i> İş Yeri Listesi</h2>
+
+            <!-- İş Yeri Arama Formu -->
+            <form id="isyeri-search-form" class="d-flex mb-3" data-tab="isyeri">
+                <input type="hidden" name="tab" value="isyeri">
+                <input class="form-control me-2" type="search" placeholder="İş Yeri Ara" aria-label="Search" name="isyeri_search" value="{{ isyeri_search }}">
+                <button class="btn btn-outline-success" type="submit">Ara</button>
+            </form>
+
+            <div class="table-responsive" id="isyeri-table-container">
+                {% include 'partials/_isyeri_table.html' %}
+            </div>
+        </div>
+
+        <!-- Personel Listesi Sekmesi -->
+        <div class="tab-pane fade" id="personel" role="tabpanel" aria-labelledby="personel-tab">
+            <h2 class="mt-4"><i class="fas fa-users"></i> Personel Listesi</h2>
+
+            <!-- Personel Arama Formu -->
+            <form id="personel-search-form" class="d-flex mb-3" data-tab="personel">
+                <input type="hidden" name="tab" value="personel">
+                <input class="form-control me-2" type="search" placeholder="Personel Ara" aria-label="Search" name="personel_search" value="{{ personel_search }}">
+                <button class="btn btn-outline-success" type="submit">Ara</button>
+            </form>
+
+            <div class="table-responsive" id="personel-table-container">
+                {% include 'partials/_personel_table.html' %}
+            </div>
+        </div>
+
+        <!-- Araç Listesi Sekmesi -->
+        <div class="tab-pane fade" id="arac" role="tabpanel" aria-labelledby="arac-tab">
+            <h2 class="mt-4"><i class="fas fa-truck"></i> Araç Listesi</h2>
+
+            <!-- Araç Arama Formu -->
+            <form id="arac-search-form" class="d-flex mb-3" data-tab="arac">
+                <input type="hidden" name="tab" value="arac">
+                <input class="form-control me-2" type="search" placeholder="Araç Ara" aria-label="Search" name="arac_search" value="{{ arac_search }}">
+                <button class="btn btn-outline-success" type="submit">Ara</button>
+            </form>
+
+            <div class="table-responsive" id="arac-table-container">
+                {% include 'partials/_arac_table.html' %}
+            </div>
+        </div>
+
+        <!-- Ev Listesi Sekmesi -->
+        <div class="tab-pane fade" id="ev" role="tabpanel" aria-labelledby="ev-tab">
+            <h2 class="mt-4"><i class="fas fa-home"></i> Ev Listesi</h2>
+            
+            <!-- Ev Arama Formu -->
+            <form id="ev-search-form" class="d-flex mb-3" data-tab="ev">
+                <input type="hidden" name="tab" value="ev">
+                <input class="form-control me-2" type="search" placeholder="Ev Ara" aria-label="Search" name="ev_search" value="{{ ev_search }}">
+                <button class="btn btn-outline-success" type="submit">Ara</button>
+            </form>
+
+            <div class="table-responsive" id="ev-table-container">
+                {% include 'partials/_ev_table.html' %}
+            </div>
+        </div>
+
+        <!-- Gönderilen İşler Sekmesi -->
+        <div class="tab-pane fade" id="gonderim" role="tabpanel" aria-labelledby="gonderim-tab">
+            <h2 class="mt-4"><i class="fas fa-clipboard-list"></i> Gönderilen İşler</h2>
+
+            <!-- Gönderilen İşler Arama Formu -->
+            <form id="gonderim-search-form" class="d-flex mb-3" data-tab="gonderim">
+                <input type="hidden" name="tab" value="gonderim">
+                <input class="form-control me-2" type="search" placeholder="Gönderilen İşler Ara" aria-label="Search" name="gonderim_search" value="{{ gonderim_search }}">
+                <button class="btn btn-outline-success" type="submit">Ara</button>
+            </form>
+
+            <div class="table-responsive" id="gonderim-table-container">
+                {% include 'partials/_gonderim_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img src="" id="modalImage" class="img-fluid" alt="Fotoğraf">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var uyrukSelect = document.getElementById('personel_uyruk');
+    if (uyrukSelect) {
+        var flagIcon = document.getElementById('selected-flag');
+
+        // Sayfa yüklendiğinde seçili ülkenin bayrağını göster
+        var initialCountry = uyrukSelect.value.toLowerCase();
+        if (initialCountry) {
+            flagIcon.className = 'flag-icon flag-icon-' + initialCountry;
+        } else {
+            flagIcon.className = 'flag-icon'; // Bayrak yoksa sadece icon sınıfını bırak
+        }
+
+        // Seçim değiştiğinde bayrağı güncelle
+        uyrukSelect.addEventListener('change', function() {
+            var selectedCountry = this.value.toLowerCase();
+            if (selectedCountry) {
+                flagIcon.className = 'flag-icon flag-icon-' + selectedCountry;
+            } else {
+                flagIcon.className = 'flag-icon'; // Bayrak yoksa sadece icon sınıfını bırak
+            }
+        });
+    }
+});
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // Modal Pencereleri için
+        document.addEventListener('click', function(e){
+            if(e.target && e.target.classList.contains('clickable-image')){
+                var imageUrl = e.target.getAttribute('data-image');
+                document.getElementById('modalImage').src = imageUrl;
+                var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+                imageModal.show();
+            }
+        });
+
+        // AJAX Arama Fonksiyonları
+        function performSearch(form, tab) {
+            var formData = new FormData(form);
+            var queryString = new URLSearchParams(formData).toString();
+
+            fetch('/search?' + queryString)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(tab + '-table-container').innerHTML = data.html;
+                })
+                .catch(error => {
+                    alert('Arama işlemi sırasında bir hata oluştu.');
+                });
+        }
+
+        // Arama Formları için Event Listener Ekleme
+        ['isyeri', 'personel', 'arac', 'gonderim', 'ev'].forEach(function(tab){
+            var form = document.getElementById(tab + '-search-form');
+            if(form){
+                form.addEventListener('submit', function(e){
+                    e.preventDefault();
+                    performSearch(this, tab);
+                });
+            }
+        });
+
+        // Aktif sekmeyi koruma
+        var activeTab = "{{ active_tab }}";
+        if(activeTab){
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#' + activeTab + '-tab'));
+            tabTrigger.show();
+        }
+
+        // Muayene ve Bakım Uyarıları
+        // Burada araçlar için muayene ve bakım uyarıları eklenebilir
+    });
+</script>
+
+<!-- İletişim Personelleri Dinamik Ekleme/Kaldırma -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var addPersonelBtn = document.getElementById('add_personel');
+    var personelContainer = document.getElementById('iletisim_personelleri');
+    var personelCount = personelContainer.getElementsByClassName('iletisim_personeli').length;
+
+    addPersonelBtn.addEventListener('click', function() {
+        var newPersonel = document.createElement('div');
+        newPersonel.classList.add('iletisim_personeli');
+        newPersonel.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_isim_${personelCount}">İsim</label>
+                <input type="text" class="form-control" id="iletisim_personel_isim_${personelCount}" name="iletisim_personel[${personelCount}][isim]" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_telefon_${personelCount}">Telefon</label>
+                <input type="text" class="form-control" id="iletisim_personel_telefon_${personelCount}" name="iletisim_personel[${personelCount}][telefon]" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="iletisim_personel_email_${personelCount}">E-mail</label>
+                <input type="email" class="form-control" id="iletisim_personel_email_${personelCount}" name="iletisim_personel[${personelCount}][email]">
+            </div>
+            <button type="button" class="btn btn-danger btn-sm remove-personel">Kaldır</button>
+            <hr>
+        `;
+        personelContainer.appendChild(newPersonel);
+        personelCount++;
+    });
+
+    personelContainer.addEventListener('click', function(e) {
+        if(e.target && e.target.classList.contains('remove-personel')) {
+            e.target.parentElement.remove();
+        }
+    });
+});
+</script>
+{% endblock %}

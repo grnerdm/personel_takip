@@ -1,0 +1,132 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="container mt-4">
+  <h1>Gönderim Düzenle</h1>
+
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="card-title mb-0">Gönderim Bilgileri</h5>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <!-- İş yeri seçimi -->
+        <div class="mb-3">
+          {{ form.isyeri.label(class="form-label") }} {{
+          form.isyeri(class="form-select") }}
+        </div>
+
+        <!-- Araç ve Şoför bilgileri -->
+        <div class="card mb-3">
+          <div class="card-header bg-info text-white">
+            <h6 class="mb-0">Araç ve Şoför Bilgileri</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                {{ form.arac.label(class="form-label") }} {{
+                form.arac(class="form-select", id="aracSelect") }}
+              </div>
+              <div class="col-md-6">
+                {{ form.sofor.label(class="form-label") }} {{
+                form.sofor(class="form-select") }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personel seçimi -->
+        <div class="card mb-3">
+          <div class="card-header bg-success text-white">
+            <h6 class="mb-0">Personel Seçimi</h6>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="personelArama"
+                placeholder="Personel ara..."
+              />
+            </div>
+            <div
+              class="personel-list border p-3"
+              style="max-height: 300px; overflow-y: auto"
+            >
+              {{ form.personeller(class="form-select", multiple=true, size=10)
+              }}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          {{ form.submit(class="btn btn-primary") }}
+          <a href="{{ url_for('index') }}" class="btn btn-secondary">İptal</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Personel Değişiklik Geçmişi -->
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="card-title mb-0">Personel Değişiklik Geçmişi</h5>
+    </div>
+    <div class="card-body">
+      {% if logs %}
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Personel</th>
+              <th>İşlem</th>
+              <th>Tarih</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log.personel.ad }} {{ log.personel.soyad }}</td>
+              <td>
+                {% if log.islem_tipi == 'eklendi' %}
+                <span class="badge bg-success">Eklendi</span>
+                {% elif log.islem_tipi == 'cikarildi' %}
+                <span class="badge bg-danger">Çıkarıldı</span>
+                {% elif log.islem_tipi == 'izne_cikti' %}
+                <span class="badge bg-warning">İzne Çıktı</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ log.islem_tipi }}</span>
+                {% endif %}
+              </td>
+              <td>{{ log.tarih.strftime('%d/%m/%Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted">Henüz değişiklik kaydı bulunmamaktadır.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Personel arama fonksiyonu
+    const personelArama = document.getElementById("personelArama");
+    const personelSelect = document.getElementById("personeller");
+    const personelOptions = Array.from(personelSelect.options);
+
+    personelArama.addEventListener("input", function () {
+      const searchText = this.value.toLowerCase();
+      personelOptions.forEach((option) => {
+        const personelAd = option.text.toLowerCase();
+        option.style.display = personelAd.includes(searchText) ? "" : "none";
+      });
+    });
+  });
+</script>
+{% endblock %}

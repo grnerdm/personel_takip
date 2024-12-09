@@ -1,0 +1,188 @@
+{% extends "base.html" %} {% block title %}Araç Düzenle - {{ vehicle.arac_plaka
+}}{% endblock %} {% block content %}
+<div class="container mt-4">
+  <h1>Araç Düzenle - {{ vehicle.arac_plaka }}</h1>
+
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-car me-2"></i>
+        <h5 class="card-title mb-0">Araç Bilgilerini Güncelle</h5>
+      </div>
+    </div>
+
+    <div class="card-body edit-form-container">
+      <!-- Form overlay -->
+      <div class="form-overlay active"></div>
+
+      <form method="POST" enctype="multipart/form-data" class="edit-form">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.arac_marka_model.label(class="form-label") }} {{
+          form.arac_marka_model(class="form-control edit-form-input",
+          disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.km.label(class="form-label") }} {{ form.km(class="form-control
+          edit-form-input", disabled=true) }}
+        </div>
+
+        <div class="form-check form-switch mb-3">
+          {{ form.maintenance_status(class="form-check-input edit-form-input",
+          disabled=true) }} {{
+          form.maintenance_status.label(class="form-check-label") }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.parking_zone.label(class="form-label") }} {{
+          form.parking_zone(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <div class="form-check form-switch mb-3">
+          {{ form.penalty_status(class="form-check-input edit-form-input",
+          disabled=true) }} {{
+          form.penalty_status.label(class="form-check-label") }}
+        </div>
+
+        <div
+          id="penalty_info_group"
+          class="mb-3"
+          {%
+          if
+          not
+          form.penalty_status.data
+          %}style="display: none;"
+          {%
+          endif
+          %}
+        >
+          {{ form.penalty_info.label(class="form-label") }} {{
+          form.penalty_info(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.muayne_date.label(class="form-label") }} {{
+          form.muayne_date(class="form-control edit-form-input", disabled=true)
+          }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.next_muayne_date.label(class="form-label") }} {{
+          form.next_muayne_date(class="form-control edit-form-input",
+          disabled=true) }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.ruhsat_foto.label(class="form-label") }} {{
+          form.ruhsat_foto(class="form-control edit-form-input", disabled=true)
+          }} {% if vehicle.ruhsat_photo_path %}
+          <div class="small mt-2">Mevcut Ruhsat Fotoğrafı:</div>
+          <img
+            src="{{ url_for('static', filename='uploads/' + vehicle.ruhsat_photo_path.split('/')[-1]) }}"
+            class="img-thumbnail mt-2"
+            width="150"
+            alt="Ruhsat Fotoğrafı"
+          />
+          {% endif %}
+        </div>
+
+        <!-- Düzenleme butonları -->
+        <div class="edit-buttons-container mt-4">
+          <button
+            type="button"
+            class="btn btn-primary"
+            id="editButton"
+            style="z-index: 9999"
+          >
+            <i class="fas fa-edit"></i> Düzenle
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            id="updateButton"
+            style="display: none"
+          >
+            <i class="fas fa-save"></i> Güncelle
+          </button>
+          <a
+            href="{{ url_for('yonetici_paneli', tab='arac-ekle') }}"
+            class="btn btn-secondary"
+          >
+            <i class="fas fa-arrow-left"></i> Geri Dön
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Araç Logları -->
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="card-title mb-0">Araç Logları</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Değişiklik Türü</th>
+              <th>Eski Değer</th>
+              <th>Yeni Değer</th>
+              <th>Zaman</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in vehicle.logs %}
+            <tr>
+              <td>{{ log.change_type.replace('_', ' ').capitalize() }}</td>
+              <td>{{ log.old_value }}</td>
+              <td>{{ log.new_value }}</td>
+              <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+            </tr>
+            {% endfor %} {% if vehicle.logs|length == 0 %}
+            <tr>
+              <td colspan="4" class="text-center">
+                Henüz bir log kaydı bulunmamaktadır.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+  window.onload = function () {
+    var editButton = document.getElementById("editButton");
+    var updateButton = document.getElementById("updateButton");
+    var formOverlay = document.querySelector(".form-overlay");
+    var formInputs = document.querySelectorAll(".edit-form-input");
+
+    editButton.onclick = function () {
+      formInputs.forEach(function (input) {
+        input.disabled = false;
+      });
+
+      formOverlay.classList.remove("active");
+      editButton.style.display = "none";
+      updateButton.style.display = "inline-block";
+    };
+
+    // Ceza durumu değiştiğinde info alanını göster/gizle
+    var penaltyStatus = document.querySelector('input[name="penalty_status"]');
+    var penaltyInfo = document.getElementById("penalty_info_group");
+
+    if (penaltyStatus) {
+      penaltyStatus.addEventListener("change", function () {
+        penaltyInfo.style.display = this.checked ? "block" : "none";
+      });
+    }
+  };
+</script>
+{% endblock %}

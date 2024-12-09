@@ -1,0 +1,278 @@
+<!-- templates/muhasebe.html -->
+{% extends "base.html" %}
+
+{% block title %}Muhasebe - Personel Takip Programı{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js Kütüphanesi -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Ek stil düzenlemeleri */
+    .muhasebe-content {
+        text-align: center;
+        font-size: 1.5rem;
+        margin-top: 50px;
+    }
+
+    /* Grafik boyutlandırmaları */
+    #expenseChart {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-chart-line"></i> Muhasebe</h2>
+
+    <!-- Sekme Butonları -->
+    <ul class="nav nav-tabs" id="muhasebeTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if tab == 'gelirler' %}active{% endif %}" id="gelirler-tab" data-bs-toggle="tab" data-bs-target="#gelirler" type="button" role="tab" aria-controls="gelirler" aria-selected="{% if tab == 'gelirler' %}true{% else %}false{% endif %}">
+                Gelirler
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if tab == 'giderler' %}active{% endif %}" id="giderler-tab" data-bs-toggle="tab" data-bs-target="#giderler" type="button" role="tab" aria-controls="giderler" aria-selected="{% if tab == 'giderler' %}true{% else %}false{% endif %}">
+                Giderler
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if tab == 'maaslar' %}active{% endif %}" id="maaslar-tab" data-bs-toggle="tab" data-bs-target="#maaslar" type="button" role="tab" aria-controls="maaslar" aria-selected="{% if tab == 'maaslar' %}true{% else %}false{% endif %}">
+                Personel Maaşları
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if tab == 'ozet' %}active{% endif %}" id="ozet-tab" data-bs-toggle="tab" data-bs-target="#ozet" type="button" role="tab" aria-controls="ozet" aria-selected="{% if tab == 'ozet' %}true{% else %}false{% endif %}">
+                Genel Özet
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="muhasebeTabContent">
+        <!-- Gelirler Sekmesi -->
+        <div class="tab-pane fade {% if tab == 'gelirler' %}show active{% endif %}" id="gelirler" role="tabpanel" aria-labelledby="gelirler-tab">
+            <h3 class="mt-4">Gelirler</h3>
+            <!-- Gelir Ekleme Formu -->
+            <form method="POST" action="{{ url_for('gelir_ekle') }}" class="row g-3 mb-3">
+                {{ form.hidden_tag() }}
+                <div class="col-md-3">
+                    <label for="isyeri_id" class="form-label">İş Yeri:</label>
+                    <select name="isyeri_id" id="isyeri_id" class="form-select" required>
+                        {% for isyeri in isyeri_listesi %}
+                        <option value="{{ isyeri.id }}">{{ isyeri.ad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="amount" class="form-label">Tutar (€):</label>
+                    <input type="number" step="0.01" name="amount" id="amount" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="date" class="form-label">Tarih:</label>
+                    <input type="date" name="date" id="date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="description" class="form-label">Açıklama:</label>
+                    <input type="text" name="description" id="description" class="form-control">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success">Gelir Ekle</button>
+                </div>
+            </form>
+
+            <!-- Gelirler Tablosu -->
+            <table class="table table-bordered table-striped fixed-table table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>İş Yeri</th>
+                        <th>Tutar (€)</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for income in incomes %}
+                    <tr>
+                        <td>{{ income.isyeri.ad }}</td>
+                        <td>{{ "%.2f"|format(income.amount) }}</td>
+                        <td>{{ income.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ income.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Giderler Sekmesi -->
+        <div class="tab-pane fade {% if tab == 'giderler' %}show active{% endif %}" id="giderler" role="tabpanel" aria-labelledby="giderler-tab">
+            <h3 class="mt-4">Giderler</h3>
+            <!-- Gider Ekleme Formu -->
+            <form method="POST" action="{{ url_for('gider_ekle') }}" class="row g-3 mb-3">
+                {{ form.hidden_tag() }}
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Kategori:</label>
+                    <input type="text" name="category" id="category" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="amount" class="form-label">Tutar (€):</label>
+                    <input type="number" step="0.01" name="amount" id="amount" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="date" class="form-label">Tarih:</label>
+                    <input type="date" name="date" id="date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="description" class="form-label">Açıklama:</label>
+                    <input type="text" name="description" id="description" class="form-control">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-danger">Gider Ekle</button>
+                </div>
+            </form>
+
+            <!-- Giderler Tablosu -->
+            <table class="table table-bordered table-striped fixed-table table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Kategori</th>
+                        <th>Tutar (€)</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.category }}</td>
+                        <td>{{ "%.2f"|format(expense.amount) }}</td>
+                        <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ expense.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Giderler Grafiği -->
+            <canvas id="expenseChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Maaşlar Sekmesi -->
+        <div class="tab-pane fade {% if tab == 'maaslar' %}show active{% endif %}" id="maaslar" role="tabpanel" aria-labelledby="maaslar-tab">
+            <h3 class="mt-4">Personel Maaşları</h3>
+            <!-- Maaş Hesaplama Formu -->
+            <form method="POST" action="{{ url_for('maas_hesapla') }}" class="row g-3 mb-3">
+                {{ form.hidden_tag() }}
+                <div class="col-md-3">
+                    {{ form.personel_id.label(class="form-label") }}
+                    {{ form.personel_id(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.brut_saatlik_ucret.label(class="form-label") }}
+                    {{ form.brut_saatlik_ucret(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.standart_saatler.label(class="form-label") }}
+                    {{ form.standart_saatler(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.hafta_sonu_saatleri.label(class="form-label") }}
+                    {{ form.hafta_sonu_saatleri(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.gece_saatleri.label(class="form-label") }}
+                    {{ form.gece_saatleri(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.tatil_saatleri.label(class="form-label") }}
+                    {{ form.tatil_saatleri(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.date.label(class="form-label") }}
+                    {{ form.date(class="form-control") }}
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+                </div>
+            </form>
+            <!-- Maaşlar Tablosu -->
+            <table class="table table-bordered table-striped fixed-table table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Personel</th>
+                        <th>Toplam Brüt (€)</th>
+                        <th>Toplam Kesinti (€)</th>
+                        <th>Net Gelir (€)</th>
+                        <th>Tarih</th>
+                        <th>Bordro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for salary in salaries %}
+                    <tr>
+                        <td>{{ salary.personel.ad }} {{ salary.personel.soyad }}</td>
+                        <td>{{ "%.2f"|format(salary.toplam_brut) }}</td>
+                        <td>{{ "%.2f"|format(salary.toplam_kesintiler) }}</td>
+                        <td>{{ "%.2f"|format(salary.net_gelir) }}</td>
+                        <td>{{ salary.date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <form action="{{ url_for('bordro_indir', salary_id=salary.id) }}" method="post" style="display:inline;">
+                                {{ form.hidden_tag() }}
+                                <button type="submit" class="btn btn-success btn-sm">Bordro İndir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Genel Özet Sekmesi -->
+        <div class="tab-pane fade {% if tab == 'ozet' %}show active{% endif %}" id="ozet" role="tabpanel" aria-labelledby="ozet-tab">
+            <h3 class="mt-4">Genel Özet</h3>
+            <p>Toplam Gelir: €{{ "%.2f"|format(total_income) }}</p>
+            <p>Toplam Gider: €{{ "%.2f"|format(total_expense) }}</p>
+            <p>Net Kar/Zarar: €{{ "%.2f"|format(net_balance) }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Muhasebe Grafiği için Script -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Giderler Grafiği
+        var ctx = document.getElementById('expenseChart').getContext('2d');
+        var expenseData = {
+            labels: [
+                {% for category, items in expenses|groupby('category') %}
+                '{{ category }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for category, items in expenses|groupby('category') %}
+                    {{ items|map(attribute='amount')|sum }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#8E44AD',
+                    '#2ECC71',
+                    '#E74C3C',
+                    '#3498DB'
+                ]
+            }]
+        };
+        var myPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: expenseData
+        });
+    });
+</script>
+{% endblock %}
