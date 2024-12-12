@@ -3,13 +3,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, current_app, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import (
-    StringField, SubmitField, TextAreaField, FileField, BooleanField,
-    DateField, IntegerField, SelectMultipleField, SelectField, FloatField
-)
-from wtforms.validators import (
-    DataRequired, Email, Length, Regexp, Optional
-)
+from wtforms import StringField, SubmitField, TextAreaField, FileField, BooleanField, DateField, IntegerField, SelectMultipleField, SelectField, FloatField
+from wtforms.validators import DataRequired, Email, Length, Regexp, Optional
 from flask_wtf.file import MultipleFileField, FileAllowed, FileRequired
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,14 +22,14 @@ import uuid
 import re
 import sqlalchemy as sa
 import json
-import pycountry  # Ülke kodları için
+import pycountry
 import pytz
 from weasyprint import HTML
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from flask_login import UserMixin
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 # Uygulama ve Veritabanı Yapılandırması
 app = Flask(__name__, instance_relative_config=True)
@@ -217,7 +212,7 @@ class Log(db.Model):
         nullable=False
     )
     action = db.Column(db.String(255), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     # İlişkiler
     user = db.relationship(
@@ -393,7 +388,7 @@ class VehicleLog(db.Model):
     change_type = db.Column(db.String(50), nullable=False)
     old_value = db.Column(db.String(200))
     new_value = db.Column(db.String(200))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f"<VehicleLog {self.change_type} for Vehicle ID {self.vehicle_id}>"
@@ -505,7 +500,7 @@ class RentLog(db.Model):
     week_number = db.Column(db.Integer, nullable=False)
     action = db.Column(db.String(50), nullable=False)  # 'paid' veya 'unpaid'
     amount = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     user_id = db.Column(db.Integer, db.ForeignKey(
         'users.id'), nullable=False)  # İşlemi yapan kullanıcı
 
@@ -565,6 +560,12 @@ class EditHouseForm(FlaskForm):
                                 Optional(), FileAllowed(['pdf'])])
 
     submit = SubmitField('Güncelle')
+    residents = SelectMultipleField(
+        'Ev Sakinleri', coerce=int, validators=[Optional()])
+    weekly_rent = FloatField('Haftalık Kira', validators=[Optional()])
+    residents = SelectMultipleField(
+        'Ev Sakinleri', coerce=int, validators=[Optional()])
+    weekly_rent = FloatField('Haftalık Kira', validators=[Optional()])
 
 
 class Expense(db.Model):
@@ -639,7 +640,7 @@ class GonderimLog(db.Model):
     gonderim_id = db.Column(db.Integer, db.ForeignKey('gonderim.id'))
     personel_id = db.Column(db.Integer, db.ForeignKey('personel.id'))
     islem_tipi = db.Column(db.String(20))  # 'eklendi' veya 'çıkarıldı'
-    tarih = db.Column(db.DateTime, default=datetime.utcnow)
+    tarih = db.Column(db.DateTime, default=datetime.now)
 
     # İlişkiler
     gonderim = db.relationship('Gonderim', backref='logs')
@@ -652,9 +653,9 @@ class IzinAyarlari(db.Model):
     saat_esigi = db.Column(db.Integer, nullable=False)  # Örn: 500 saat
     ay_esigi = db.Column(db.Integer, nullable=False)    # Örn: 6 ay
     izin_gun_sayisi = db.Column(db.Integer, nullable=False)  # Örn: 20 gün
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        db.DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class IzinKaydi(db.Model):
@@ -664,18 +665,21 @@ class IzinKaydi(db.Model):
         'personel.id'), nullable=False)
     baslangic_tarihi = db.Column(db.Date, nullable=False)
     bitis_tarihi = db.Column(db.Date, nullable=False)
-    # 'yillik', 'hastalik', 'vefat' vb.
+    # 'yillik', 'hastalik', 'vefat', 'diger'
     izin_turu = db.Column(db.String(50), nullable=False)
     # 'aktif', 'tamamlandi', 'iptal'
     durum = db.Column(db.String(20), nullable=False)
     aciklama = db.Column(db.String(500))
-    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.now)
     olusturan_id = db.Column(
         db.Integer, db.ForeignKey('users.id'), nullable=False)
+    onceki_isyeri_id = db.Column(
+        db.Integer, db.ForeignKey('isyeri.id'), nullable=True)
 
     # İlişkiler
     personel = db.relationship('Personel', backref='izin_kayitlari')
     olusturan = db.relationship('User', backref='olusturulan_izinler')
+    onceki_isyeri = db.relationship('Isyeri', backref='izin_kayitlari')
 
     def get_total_days(self):
         """İzin süresini gün olarak hesaplar"""
@@ -684,15 +688,20 @@ class IzinKaydi(db.Model):
         return (self.bitis_tarihi - self.baslangic_tarihi).days + 1
 
 
-@event.listens_for(IzinKaydi, 'after_insert')
-def update_personel_after_izin(mapper, connection, target):
-    """İzin kaydı eklendiğinde personeli güncelle"""
-    personel = Personel.query.get(target.personel_id)
-    if personel:
-        if target.durum == 'aktif':
-            # Sadece şirket ID'sini null yap
-            personel.calistigi_sirket_id = None
-        db.session.commit()
+@event.listens_for(db.session, 'after_commit')
+def after_commit_handler(session):
+    # Bu handler commit işleminden sonra tetiklenir.
+    # Yeni eklenen izin kayıtlarını tespit edip ilgili personelleri güncelleyin.
+    # Bu sayede "transaction already begun" hatasıyla karşılaşmazsınız.
+    for obj in session.new:
+        if isinstance(obj, IzinKaydi):
+            # Şimdi transaction bitti, yeni transaction başlatılmadan
+            # tekrar session üzerinde işlem yapabilirsiniz.
+            personel = Personel.query.get(obj.personel_id)
+            if personel:
+                personel.calistigi_sirket_id = None
+                personel.status = 'Pasif'
+                db.session.add(personel)
 
 
 def calculate_total_working_hours(personel_id):
@@ -738,6 +747,28 @@ def calculate_working_duration(personel):
         'days': days,
         'total_months': years * 12 + months
     }
+
+
+class HouseResidentLog(db.Model):
+    __tablename__ = 'house_resident_log'
+    id = db.Column(db.Integer, primary_key=True)
+    house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
+    personel_id = db.Column(db.Integer, db.ForeignKey(
+        'personel.id'), nullable=False)
+    action = db.Column(db.String(20), nullable=False)  # 'added' veya 'removed'
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+
+    # İlişkiler
+    house = db.relationship('House', backref='resident_logs')
+    personel = db.relationship('Personel', backref='house_resident_logs')
+    user = db.relationship('User', backref='house_resident_logs')
+
+    def get_week_info(self):
+        """Log kaydının hangi haftaya ait olduğunu döndürür"""
+        year, week, _ = self.timestamp.isocalendar()
+        return year, week
+
 
 # Form sınıfları
 
@@ -902,19 +933,24 @@ def country_flag_filter(alpha_2_code):
 def create_log(user_id, action):
     new_log = Log(user_id=user_id, action=action)
     db.session.add(new_log)
-    db.session.commit()
 
 
 def log_action(action_func):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Loglamayı fonksiyon çalıştırılmadan önce yap
-            action = action_func(current_user=current_user, **kwargs)
-            if current_user.is_authenticated and action:
-                create_log(current_user.id, action)
-            response = f(*args, **kwargs)
-            return response
+            try:
+                response = f(*args, **kwargs)
+                # Burada da commit yok, sadece add var.
+                if current_user.is_authenticated:
+                    action = action_func(current_user=current_user, **kwargs)
+                    if action:
+                        new_log = Log(user_id=current_user.id, action=action)
+                        db.session.add(new_log)
+                return response
+            except Exception as e:
+                db.session.rollback()
+                raise e
         return decorated_function
     return decorator
 
@@ -1450,7 +1486,8 @@ def edit_gonderim(gonderim_id):
 
             # Çıkarılan personelleri güncelle
             for personel_id in cikarilanlar:
-                personel = Personel.query.get(personel_id)
+                personel = db.session.get(Personel, personel_id)
+
                 if personel:
                     gonderim.personeller.remove(personel)
                     personel.calistigi_sirket_id = None
@@ -1461,14 +1498,15 @@ def edit_gonderim(gonderim_id):
                         gonderim_id=gonderim.id,
                         personel_id=personel.id,
                         islem_tipi='cikarildi',
-                        tarih=datetime.utcnow()
+                        tarih=datetime.now()
                     )
                     db.session.add(log)
                     print(f"DEBUG - Personel çıkarıldı: ID={personel.id}")
 
             # Eklenen personelleri güncelle
             for personel_id in eklenenler:
-                personel = Personel.query.get(personel_id)
+                personel = db.session.get(Personel, personel_id)
+
                 if personel:
                     # İzin kontrolü
                     if personel.aktif_izin:
@@ -1491,7 +1529,7 @@ def edit_gonderim(gonderim_id):
                         gonderim_id=gonderim.id,
                         personel_id=personel.id,
                         islem_tipi='eklendi',
-                        tarih=datetime.utcnow()
+                        tarih=datetime.now()
                     )
                     db.session.add(log)
                     print(f"DEBUG - Personel eklendi: ID={personel.id}")
@@ -1977,7 +2015,8 @@ def yonetici_paneli():
             # Personel Silme İşlemi
             personel_id = request.form.get('personel_id')
             if personel_id:
-                personel = Personel.query.get(personel_id)
+                personel = db.session.get(Personel, personel_id)
+
                 if personel:
                     try:
                         # Fotoğrafları silme
@@ -2149,7 +2188,8 @@ def yonetici_paneli():
 
                 # Evde yaşayan personelleri ekleme
                 for personel_id in selected_residents:
-                    personel = Personel.query.get(personel_id)
+                    personel = db.session.get(Personel, personel_id)
+
                     if personel:
                         house_personel = HousePersonel(
                             personel=personel, house=new_house)
@@ -2273,7 +2313,8 @@ def gonder():
 
             # Seçilen personelleri işle
             for personel_id in personel_ids:
-                personel = Personel.query.get(personel_id)
+                personel = db.session.get(Personel, personel_id)
+
                 if personel:
                     # İzin kontrolü
                     if personel.aktif_izin:
@@ -2308,7 +2349,7 @@ def gonder():
                                 gonderim_id=new_gonderim.id,
                                 personel_id=personel.id,
                                 islem_tipi='eklendi',
-                                tarih=datetime.utcnow()
+                                tarih=datetime.now()
                             )
                             db.session.add(log)
                             print(
@@ -2348,7 +2389,7 @@ def gonder():
                                     gonderim_id=new_gonderim.id,
                                     personel_id=sofor.id,
                                     islem_tipi='eklendi',
-                                    tarih=datetime.utcnow()
+                                    tarih=datetime.now()
                                 )
                                 db.session.add(log)
                                 print(f"DEBUG - Şoför log kaydı oluşturuldu")
@@ -2419,7 +2460,8 @@ def get_izin_ayarlari():
 @login_required
 @log_action(lambda current_user, **kwargs: f"Personel Düzenleme: Personel ID {kwargs.get('personel_id', 0)}")
 def edit_personel(personel_id):
-    personel = Personel.query.get(personel_id)
+    personel = db.session.get(Personel, personel_id)
+
     if not personel:
         flash('Personel bulunamadı.')
         return redirect(url_for('index'))
@@ -2960,12 +3002,20 @@ def edit_house(house_id):
                 flash(f'Kira miktarı güncellenirken bir hata oluştu: {
                       e}', 'danger')
 
+    available_personeller = Personel.query.filter(
+        ~Personel.id.in_(
+            db.session.query(HousePersonel.personel_id)
+            .filter(HousePersonel.house_id != house_id)
+        )
+    ).all()
+
     return render_template('edit_house.html',
                            house=house,
                            form=form,
                            rent_info=rent_payments,
                            current_year=current_year,
-                           current_week=current_week)
+                           current_week=current_week,
+                           available_personeller=available_personeller)
 
 
 @app.template_filter('country_name')
@@ -3106,56 +3156,69 @@ def izin_ekle(personel_id):
     form = IzinEkleForm()
     if form.validate_on_submit():
         try:
-            # Personeli al
-            personel = Personel.query.get_or_404(personel_id)
+            db.session.begin()  # Yeni transaction başlat
+
+            # Personel kontrolü
+            personel = Personel.query.get(personel_id)
+            if not personel:
+                db.session.rollback()
+                flash('Personel bulunamadı.', 'danger')
+                return redirect(url_for('edit_personel', personel_id=personel_id))
 
             # Aktif izin kontrolü
-            if personel.aktif_izin:
+            aktif_izin = IzinKaydi.query.filter_by(
+                personel_id=personel_id,
+                durum='aktif'
+            ).first()
+
+            if aktif_izin:
+                db.session.rollback()
                 flash('Personelin aktif bir izni bulunmaktadır.', 'danger')
                 return redirect(url_for('edit_personel', personel_id=personel_id))
 
             # Tarih kontrolü
             if form.baslangic_tarihi.data > form.bitis_tarihi.data:
+                db.session.rollback()
                 flash('Başlangıç tarihi bitiş tarihinden sonra olamaz.', 'danger')
                 return redirect(url_for('edit_personel', personel_id=personel_id))
 
-            # Yeni bir session başlat
-            with db.session.begin_nested():
-                # Eski iş yeri bilgisini sakla
-                eski_sirket_id = personel.calistigi_sirket_id
+            # Önceki iş yeri bilgisini kaydet
+            onceki_isyeri_id = personel.calistigi_sirket_id
 
-                # Yeni izin kaydını oluştur
-                yeni_izin = IzinKaydi(
-                    personel_id=personel_id,
-                    baslangic_tarihi=form.baslangic_tarihi.data,
-                    bitis_tarihi=form.bitis_tarihi.data,
-                    izin_turu=form.izin_turu.data,
-                    durum='aktif',
-                    aciklama=form.aciklama.data,
-                    olusturan_id=current_user.id
-                )
-                db.session.add(yeni_izin)
+            # Önce gönderimden çıkar
+            if onceki_isyeri_id:
+                gonderim = Gonderim.query.filter_by(
+                    isyeri_id=onceki_isyeri_id
+                ).first()
+                if gonderim and personel in gonderim.personeller:
+                    gonderim.personeller.remove(personel)
 
-                # Personeli pasife al ve iş yerinden çıkar
-                personel.calistigi_sirket_id = None
+                    gonderim_log = GonderimLog(
+                        gonderim_id=gonderim.id,
+                        personel_id=personel.id,
+                        islem_tipi='izne_cikti',
+                        tarih=datetime.now()
+                    )
+                    db.session.add(gonderim_log)
 
-                # Eğer personel bir gönderimde yer alıyorsa çıkar
-                if eski_sirket_id:
-                    gonderim = Gonderim.query.filter_by(
-                        isyeri_id=eski_sirket_id).first()
-                    if gonderim and personel in gonderim.personeller:
-                        gonderim.personeller.remove(personel)
+            # İzin kaydını oluştur
+            yeni_izin = IzinKaydi(
+                personel_id=personel_id,
+                baslangic_tarihi=form.baslangic_tarihi.data,
+                bitis_tarihi=form.bitis_tarihi.data,
+                izin_turu=form.izin_turu.data,
+                durum='aktif',
+                aciklama=form.aciklama.data,
+                olusturan_id=current_user.id,
+                onceki_isyeri_id=onceki_isyeri_id
+            )
+            db.session.add(yeni_izin)
 
-                        # İzne çıkma logunu ekle
-                        gonderim_log = GonderimLog(
-                            gonderim_id=gonderim.id,
-                            personel_id=personel.id,
-                            islem_tipi='izne_cikti',
-                            tarih=datetime.utcnow()
-                        )
-                        db.session.add(gonderim_log)
+            # Personeli güncelle
+            personel.calistigi_sirket_id = None
+            personel.status = 'Pasif'
 
-            # Ana transaction'ı commit et
+            # Transaction'ı tamamla
             db.session.commit()
 
             flash(f'Personel başarıyla izne çıkarıldı. İzin bitiş tarihi: {
@@ -3166,13 +3229,6 @@ def izin_ekle(personel_id):
             print(f"DEBUG - İzin ekleme hatası: {str(e)}")
             flash(f'İzin kaydı oluşturulurken bir hata oluştu: {
                   str(e)}', 'danger')
-
-        return redirect(url_for('edit_personel', personel_id=personel_id))
-
-    # Form validation hataları için
-    for field, errors in form.errors.items():
-        for error in errors:
-            flash(f'{getattr(form, field).label.text}: {error}', 'danger')
 
     return redirect(url_for('edit_personel', personel_id=personel_id))
 
@@ -3185,32 +3241,48 @@ def izin_bitir(izin_id):
         flash('Bu işlemi yapma yetkiniz yok.', 'danger')
         return redirect(url_for('index'))
 
-    izin = IzinKaydi.query.get_or_404(izin_id)
-    personel = izin.personel
-
     try:
-        # İzni tamamlandı olarak işaretle
-        izin.durum = 'tamamlandi'
+        with db.session.begin():
+            izin = db.session.get(IzinKaydi, izin_id)
+            if not izin:
+                flash('İzin kaydı bulunamadı.', 'danger')
+                return redirect(url_for('index'))
 
-        # Personeli aktif yap
-        personel.status = 'Aktif'
+            personel = izin.personel
+            onceki_isyeri_id = izin.onceki_isyeri_id
 
-        # İzin bitişini logla
-        gonderim_log = GonderimLog(
-            personel_id=personel.id,
-            islem_tipi='izin_bitis',
-            tarih=datetime.utcnow()
-        )
-        db.session.add(gonderim_log)
+            # İzni tamamlandı olarak işaretle
+            izin.durum = 'tamamlandi'
+
+            # Eğer önceki iş yeri varsa, personeli oraya geri gönder
+            if onceki_isyeri_id:
+                personel.calistigi_sirket_id = onceki_isyeri_id
+                personel.status = 'Aktif'
+
+                # Gönderime ekle
+                gonderim = Gonderim.query.filter_by(
+                    isyeri_id=onceki_isyeri_id).first()
+                if gonderim and personel not in gonderim.personeller:
+                    gonderim.personeller.append(personel)
+
+                    # İzinden dönüş logunu ekle
+                    gonderim_log = GonderimLog(
+                        gonderim_id=gonderim.id,
+                        personel_id=personel.id,
+                        islem_tipi='izinden_dondu',
+                        tarih=datetime.now(datetime.UTC)
+                    )
+                    db.session.add(gonderim_log)
 
         db.session.commit()
-        flash('İzin başarıyla sonlandırıldı. Personel tekrar aktif duruma geçirildi.', 'success')
+        flash('İzin başarıyla sonlandırıldı ve personel eski iş yerine geri gönderildi.', 'success')
 
     except Exception as e:
         db.session.rollback()
+        print(f"DEBUG - İzin bitirme hatası: {str(e)}")
         flash(f'İzin sonlandırılırken bir hata oluştu: {e}', 'danger')
 
-    return redirect(url_for('edit_personel', personel_id=personel.id))
+    return redirect(url_for('edit_personel', personel_id=izin.personel_id))
 
 
 @app.route('/update_leave_settings', methods=['POST'])
@@ -3233,7 +3305,7 @@ def update_leave_settings():
             settings.saat_esigi = form.saat_esigi.data
             settings.ay_esigi = form.ay_esigi.data
             settings.izin_gun_sayisi = form.izin_gun_sayisi.data
-            settings.updated_at = datetime.utcnow()
+            settings.updated_at = datetime.now()
 
             db.session.commit()
             flash('İzin ayarları başarıyla güncellendi.', 'success')
@@ -3250,10 +3322,97 @@ def update_leave_settings():
     return redirect(url_for('yonetici_ayarlari', tab='izin-ayarlari'))
 
 
+@app.route('/add_resident/<int:house_id>', methods=['POST'])
+@login_required
+def add_resident(house_id):
+    if current_user.role not in ['admin', 'manager']:
+        return jsonify({'error': 'Yetkiniz yok'}), 403
+
+    personel_id = request.form.get('personel_id', type=int)
+    weekly_rent = request.form.get('weekly_rent', type=float, default=0.0)
+
+    if not personel_id:
+        return jsonify({'error': 'Personel seçilmedi'}), 400
+
+    house = House.query.get_or_404(house_id)
+    personel = Personel.query.get_or_404(personel_id)
+
+    # Kapasite kontrolü
+    if house.current_residents >= house.capacity:
+        return jsonify({'error': 'Ev kapasitesi dolu'}), 400
+
+    # Personel başka bir evde kalıyor mu kontrolü
+    existing_residence = HousePersonel.query.filter_by(
+        personel_id=personel_id).first()
+    if existing_residence:
+        return jsonify({'error': 'Personel zaten başka bir evde kalıyor'}), 400
+
+    try:
+        # HousePersonel kaydı oluştur
+        house_personel = HousePersonel(
+            house_id=house_id,
+            personel_id=personel_id,
+            weekly_rent=weekly_rent
+        )
+        db.session.add(house_personel)
+
+        # Log kaydı oluştur
+        log = HouseResidentLog(
+            house_id=house_id,
+            personel_id=personel_id,
+            action='added',
+            user_id=current_user.id
+        )
+        db.session.add(log)
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Personel eve eklendi'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/remove_resident/<int:house_id>/<int:personel_id>', methods=['POST'])
+@login_required
+def remove_resident(house_id, personel_id):
+    if current_user.role not in ['admin', 'manager']:
+        return jsonify({'error': 'Yetkiniz yok'}), 403
+
+    house_personel = HousePersonel.query.filter_by(
+        house_id=house_id,
+        personel_id=personel_id
+    ).first()
+
+    if not house_personel:
+        return jsonify({'error': 'Personel bu evde bulunmuyor'}), 404
+
+    try:
+        # Log kaydı oluştur
+        log = HouseResidentLog(
+            house_id=house_id,
+            personel_id=personel_id,
+            action='removed',
+            user_id=current_user.id
+        )
+        db.session.add(log)
+
+        # HousePersonel kaydını sil
+        db.session.delete(house_personel)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Personel evden çıkarıldı'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/debug_personel/<int:personel_id>')
 @login_required
 def debug_personel(personel_id):
-    personel = Personel.query.get(personel_id)
+    personel = db.session.get(Personel, personel_id)
+
     if personel:
         return {
             'id': personel.id,
